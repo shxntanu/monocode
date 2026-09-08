@@ -1181,6 +1181,7 @@ export function Composer({
                   cwd={cwd}
                   branch={branch}
                   enabled={enabled && !busy}
+                  elevated={composerElevated}
                   onChange={onBranchChange}
                   onClose={() => ref.current?.focus()}
                 />

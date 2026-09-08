@@ -18,6 +18,7 @@ import {
 } from "../lib/fs";
 import { useLockOverscroll } from "../hooks/useLockOverscroll";
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
+import { composerChipClass, composerChipMutedClass } from "./composerChip";
 import { Popover } from "./Popover";
 import { SwitchBranchDialog } from "./SwitchBranchDialog";
 
@@ -25,6 +26,8 @@ type Props = {
   cwd: string;
   branch?: string;
   enabled?: boolean;
+  /** Match empty-session composer elevation for readable chips and menus. */
+  elevated?: string;
   onChange?: () => void;
   onClose?: () => void;
 };
@@ -32,8 +35,7 @@ type Props = {
 const MENU_WIDTH = 280;
 
 type Row =
-  | { kind: "create"; name: string }
-  | { kind: "branch"; branch: GitBranchInfo };
+  { kind: "create"; name: string } | { kind: "branch"; branch: GitBranchInfo };
 
 type PendingSwitch =
   | { kind: "create"; name: string }
@@ -46,6 +48,7 @@ export function BranchPicker({
   cwd,
   branch,
   enabled = true,
+  elevated,
   onChange,
   onClose,
 }: Props) {
@@ -122,8 +125,7 @@ export function BranchPicker({
       (entry) => !entry.remote && entry.name === name,
     );
     const selected = branch || projectBranches?.current;
-    const create: Row[] =
-      name && !taken ? [{ kind: "create", name }] : [];
+    const create: Row[] = name && !taken ? [{ kind: "create", name }] : [];
     return [
       ...create,
       ...filtered.map((entry) => ({
@@ -276,10 +278,16 @@ export function BranchPicker({
           }}
           className={
             missingGit
-              ? "flex min-w-0 cursor-default items-center gap-1.5 text-content/50"
-              : `flex min-w-0 items-center gap-1.5 ${
-                  open ? "text-content" : "text-content/50 hover:text-content"
-                } disabled:opacity-40 disabled:hover:text-content/50`
+              ? `flex min-w-0 cursor-default items-center gap-1.5 ${
+                  elevated
+                    ? composerChipMutedClass(elevated)
+                    : "text-content/50"
+                }`
+              : elevated
+                ? `flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 disabled:opacity-40 ${composerChipClass(elevated, open)}`
+                : `flex min-w-0 items-center gap-1.5 ${
+                    open ? "text-content" : "text-content/50 hover:text-content"
+                  } disabled:opacity-40 disabled:hover:text-content/50`
           }
         >
           <GitBranch className="size-3.5 shrink-0" strokeWidth={1.5} />
@@ -333,11 +341,12 @@ export function BranchPicker({
             width={MENU_WIDTH}
             minHeight={MENU_MIN_HEIGHT}
             maxHeight={MENU_MAX_HEIGHT}
+            elevated={elevated}
             onDismiss={(reason) => dismiss(reason === "escape")}
             role="dialog"
             aria-label="Branch picker"
             data-branch-picker
-            className="flex flex-col overflow-hidden"
+            className={`flex flex-col overflow-hidden${elevated ? " session-composer-popover" : ""}`}
           >
             <label className="flex shrink-0 items-center gap-2 border-b border-content/10 px-2 py-2.5 text-content/50">
               <Search className="size-3.5 shrink-0" strokeWidth={1.75} />
