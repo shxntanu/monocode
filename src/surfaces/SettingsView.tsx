@@ -23,6 +23,7 @@ import { WindowControls } from "../chrome/WindowControls";
 import { useLockOverscroll } from "../hooks/useLockOverscroll";
 import {
   applyChatBackground,
+  applyChatBackgroundChatOpacity,
   applyChatBackgroundOpacity,
   applyChatBackgroundScope,
   applyBodyGlass,
@@ -31,6 +32,7 @@ import {
   applySidebarOpacity,
   applyThemeTint,
   BODY_GLASS_DEFAULT,
+  CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT,
   CHAT_BACKGROUND_OPACITY_DEFAULT,
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
@@ -38,6 +40,7 @@ import {
   THEME_PREFERENCE_DEFAULT,
   chatBackgroundSrc,
   loadBodyGlass,
+  loadChatBackgroundChatOpacity,
   loadChatBackgroundOpacity,
   loadChatBackgroundPath,
   loadChatBackgroundScope,
@@ -49,6 +52,7 @@ import {
   loadTranscriptLayout,
   loadTranscriptAnchor,
   saveBodyGlass,
+  saveChatBackgroundChatOpacity,
   saveChatBackgroundOpacity,
   saveChatBackgroundPath,
   saveChatBackgroundScope,
@@ -795,6 +799,9 @@ function useAppearanceSettings() {
   const [chatBackgroundOpacity, setChatBackgroundOpacity] = useState(
     loadChatBackgroundOpacity,
   );
+  const [chatBackgroundChatOpacity, setChatBackgroundChatOpacity] = useState(
+    loadChatBackgroundChatOpacity,
+  );
   const [chatBackgroundScope, setChatBackgroundScope] =
     useState<ChatBackgroundScope>(loadChatBackgroundScope);
   const [chatBackgroundBusy, setChatBackgroundBusy] = useState(false);
@@ -878,6 +885,12 @@ function useAppearanceSettings() {
     setChatBackgroundOpacity(next);
   }, []);
 
+  const onChatBackgroundChatOpacity = useCallback((percent: number) => {
+    const next = applyChatBackgroundChatOpacity(percent / 100);
+    saveChatBackgroundChatOpacity(next);
+    setChatBackgroundChatOpacity(next);
+  }, []);
+
   const onChatBackgroundScope = useCallback((next: ChatBackgroundScope) => {
     applyChatBackgroundScope(next);
     saveChatBackgroundScope(next);
@@ -897,6 +910,9 @@ function useAppearanceSettings() {
     onTint(THEME_HUE_DEFAULT, THEME_SATURATION_DEFAULT);
     onBodyGlass(BODY_GLASS_DEFAULT);
     onChatBackgroundOpacity(Math.round(CHAT_BACKGROUND_OPACITY_DEFAULT * 100));
+    onChatBackgroundChatOpacity(
+      Math.round(CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT * 100),
+    );
     onChatBackgroundScope(CHAT_BACKGROUND_SCOPE_DEFAULT);
     if (chatBackgroundPath) void onClearChatBackground();
     onUiScale(Math.round(UI_SCALE_DEFAULT * 100));
@@ -905,6 +921,7 @@ function useAppearanceSettings() {
     onBlur,
     onBodyGlass,
     onChatBackgroundOpacity,
+    onChatBackgroundChatOpacity,
     onChatBackgroundScope,
     onClearChatBackground,
     onThemePreference,
@@ -922,6 +939,7 @@ function useAppearanceSettings() {
     bodyGlass,
     chatBackgroundPath,
     chatBackgroundOpacity,
+    chatBackgroundChatOpacity,
     chatBackgroundScope,
     chatBackgroundBusy,
     chatBackgroundError,
@@ -934,6 +952,7 @@ function useAppearanceSettings() {
     onChooseChatBackground,
     onClearChatBackground,
     onChatBackgroundOpacity,
+    onChatBackgroundChatOpacity,
     onChatBackgroundScope,
     onUiScale,
     restoreDefaults,
@@ -1048,6 +1067,7 @@ function ChatBackgroundCard({
   const src = chatBackgroundSrc(appearance.chatBackgroundPath);
   const hasImage = Boolean(appearance.chatBackgroundPath && src);
   const visibility = Math.round(appearance.chatBackgroundOpacity * 100);
+  const chatVisibility = Math.round(appearance.chatBackgroundChatOpacity * 100);
   const busy = appearance.chatBackgroundBusy;
 
   return (
@@ -1133,18 +1153,35 @@ function ChatBackgroundCard({
             </div>
             <div className="flex items-center justify-between gap-4 border-t border-content/5 px-3 py-2.5">
               <div className="min-w-0">
-                <div className="text-[12px] text-content">Visibility</div>
+                <div className="text-[12px] text-content">Empty session</div>
                 <p className="text-[11px] text-content/40">
-                  Keep it subtle so long conversations stay readable.
+                  Background strength before you send the first message.
                 </p>
               </div>
               <Slider
-                label="Background visibility"
+                label="Empty session background visibility"
                 value={visibility}
                 display={`${visibility}%`}
                 min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
                 max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
                 onChange={appearance.onChatBackgroundOpacity}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 border-t border-content/5 px-3 py-2.5">
+              <div className="min-w-0">
+                <div className="text-[12px] text-content">During chat</div>
+                <p className="text-[11px] text-content/40">
+                  Background strength once the conversation has started. Keep
+                  this lower so messages stay readable.
+                </p>
+              </div>
+              <Slider
+                label="In-chat background visibility"
+                value={chatVisibility}
+                display={`${chatVisibility}%`}
+                min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
+                max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
+                onChange={appearance.onChatBackgroundChatOpacity}
               />
             </div>
           </div>

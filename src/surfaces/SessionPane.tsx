@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Composer } from "../chrome/Composer";
 import { DiscussionEmpty } from "../chrome/DiscussionEmpty";
+import { useComposerBackgroundElevated } from "../hooks/useComposerBackgroundElevated";
 import { SessionReview } from "../chrome/SessionReview";
 import {
   canCompactHarnessContext,
@@ -188,7 +189,8 @@ export const SessionPane = memo(function SessionPane({
         "--chat-background-image": `url(${JSON.stringify(
           projectChatBackgroundSrc(projectBackground.path, backgroundRevision),
         )})`,
-        "--chat-background-opacity": String(projectBackground.opacity),
+        "--chat-background-empty-opacity": String(projectBackground.opacity),
+        "--chat-background-chat-opacity": String(projectBackground.chatOpacity),
       } as CSSProperties)
     : undefined;
   const approve = useCallback(
@@ -266,6 +268,11 @@ export const SessionPane = memo(function SessionPane({
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionWorkCwd(session);
   const isEmpty = session.blocks.length === 0;
+  const sessionEmpty = isEmpty && !session.inboxAsk;
+  const composerElevated = useComposerBackgroundElevated(
+    session.cwd,
+    sessionEmpty,
+  );
   const showDeckProjectPicker = isEmpty && !looksLikeProject(session.cwd);
   const dockComposer = !isEmpty || inSplit || !!session.inboxAsk;
   const draftRef = useRef<string | undefined>(undefined);
@@ -275,6 +282,7 @@ export const SessionPane = memo(function SessionPane({
       focused={focused && composerFocused}
       hotkeys={focused}
       shell={!dockComposer}
+      sessionEmpty={sessionEmpty}
       harness={session.harness}
       model={session.model}
       modelSettings={session.modelSettings}
@@ -366,6 +374,7 @@ export const SessionPane = memo(function SessionPane({
     <div
       data-session-drop={session.id}
       data-session-empty={isEmpty}
+      data-composer-elevated={composerElevated}
       data-project-chat-background={!!projectBackground}
       data-project-background-scope={projectBackground?.scope}
       style={projectBackgroundStyle}
@@ -434,6 +443,7 @@ export const SessionPane = memo(function SessionPane({
               hasChatBackground={Boolean(
                 projectBackground || globalBackgroundPath,
               )}
+              composerElevated={composerElevated}
               composer={dockComposer ? undefined : composer}
             />
           )

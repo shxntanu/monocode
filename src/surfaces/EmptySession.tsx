@@ -12,9 +12,15 @@ type Props = {
   cwd: string;
   composer?: ReactNode;
   hasChatBackground?: boolean;
+  composerElevated?: string;
 };
 
-export function EmptySession({ cwd, composer, hasChatBackground }: Props) {
+export function EmptySession({
+  cwd,
+  composer,
+  hasChatBackground,
+  composerElevated,
+}: Props) {
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const arcadeEnabled = useSyncExternalStore(
     subscribeGridArcadeEnabled,
@@ -36,7 +42,7 @@ export function EmptySession({ cwd, composer, hasChatBackground }: Props) {
         <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 py-12">
           <div className="pointer-events-auto mb-4 px-2.5">
             <h1
-              className="truncate text-lg text-content"
+              className={`truncate text-lg text-content${composerElevated ? " session-empty-title" : ""}`}
               title={project ? cwd : undefined}
             >
               {title}

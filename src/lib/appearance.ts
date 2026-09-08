@@ -15,6 +15,7 @@ const TRANSCRIPT_LAYOUT_KEY = "monocode.transcriptLayout";
 const TRANSCRIPT_ANCHOR_KEY = "monocode.transcriptAnchor";
 const CHAT_BACKGROUND_PATH_KEY = "monocode.chatBackgroundPath";
 const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
+const CHAT_BACKGROUND_CHAT_OPACITY_KEY = "monocode.chatBackgroundChatOpacity";
 const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
 let chatBackgroundRevision = Date.now();
 
@@ -75,6 +76,7 @@ export const BODY_GLASS_DEFAULT = true;
 export const CHAT_BACKGROUND_OPACITY_MIN = 0.05;
 export const CHAT_BACKGROUND_OPACITY_MAX = 0.65;
 export const CHAT_BACKGROUND_OPACITY_DEFAULT = 0.24;
+export const CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT = 0.12;
 export const CHAT_BACKGROUND_SCOPE_DEFAULT: ChatBackgroundScope = "all";
 
 function clamp(value: number, min: number, max: number) {
@@ -178,6 +180,7 @@ export function initAppearance() {
   applyBodyGlass(loadBodyGlass());
   applyChatBackground(loadChatBackgroundPath());
   applyChatBackgroundOpacity(loadChatBackgroundOpacity());
+  applyChatBackgroundChatOpacity(loadChatBackgroundChatOpacity());
   applyChatBackgroundScope(loadChatBackgroundScope());
   void applyUiScale(loadUiScale());
 }
@@ -369,7 +372,36 @@ export function applyChatBackgroundOpacity(value: number) {
     CHAT_BACKGROUND_OPACITY_MAX,
   );
   document.documentElement.style.setProperty(
-    "--chat-background-opacity",
+    "--chat-background-empty-opacity",
+    String(next),
+  );
+  return next;
+}
+
+export function loadChatBackgroundChatOpacity(): number {
+  return clamp(
+    readNumber(CHAT_BACKGROUND_CHAT_OPACITY_KEY) ??
+      CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT,
+    CHAT_BACKGROUND_OPACITY_MIN,
+    CHAT_BACKGROUND_OPACITY_MAX,
+  );
+}
+
+export function saveChatBackgroundChatOpacity(value: number) {
+  writeNumber(
+    CHAT_BACKGROUND_CHAT_OPACITY_KEY,
+    clamp(value, CHAT_BACKGROUND_OPACITY_MIN, CHAT_BACKGROUND_OPACITY_MAX),
+  );
+}
+
+export function applyChatBackgroundChatOpacity(value: number) {
+  const next = clamp(
+    value,
+    CHAT_BACKGROUND_OPACITY_MIN,
+    CHAT_BACKGROUND_OPACITY_MAX,
+  );
+  document.documentElement.style.setProperty(
+    "--chat-background-chat-opacity",
     String(next),
   );
   return next;

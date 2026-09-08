@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT,
   CHAT_BACKGROUND_OPACITY_DEFAULT,
   CHAT_BACKGROUND_SCOPE_DEFAULT,
+  loadChatBackgroundChatOpacity,
   loadChatBackgroundOpacity,
   loadChatBackgroundPath,
   loadChatBackgroundScope,
   loadTranscriptLayout,
+  saveChatBackgroundChatOpacity,
   saveChatBackgroundOpacity,
   saveChatBackgroundPath,
   saveChatBackgroundScope,
@@ -25,6 +28,7 @@ const SCHEME_KEY = "monocode.colorScheme";
 const ANCHOR_KEY = "monocode.transcriptAnchor";
 const CHAT_BACKGROUND_PATH_KEY = "monocode.chatBackgroundPath";
 const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
+const CHAT_BACKGROUND_CHAT_OPACITY_KEY = "monocode.chatBackgroundChatOpacity";
 const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
 
 function mockLocalStorage() {
@@ -100,6 +104,7 @@ describe("chat background setting", () => {
   afterEach(() => {
     localStorage.removeItem(CHAT_BACKGROUND_PATH_KEY);
     localStorage.removeItem(CHAT_BACKGROUND_OPACITY_KEY);
+    localStorage.removeItem(CHAT_BACKGROUND_CHAT_OPACITY_KEY);
     localStorage.removeItem(CHAT_BACKGROUND_SCOPE_KEY);
   });
 
@@ -119,6 +124,16 @@ describe("chat background setting", () => {
     expect(loadChatBackgroundOpacity()).toBe(0.65);
     saveChatBackgroundOpacity(0);
     expect(loadChatBackgroundOpacity()).toBe(0.05);
+  });
+
+  it("defaults and clamps in-chat background visibility", () => {
+    expect(loadChatBackgroundChatOpacity()).toBe(
+      CHAT_BACKGROUND_CHAT_OPACITY_DEFAULT,
+    );
+    saveChatBackgroundChatOpacity(1);
+    expect(loadChatBackgroundChatOpacity()).toBe(0.65);
+    saveChatBackgroundChatOpacity(0);
+    expect(loadChatBackgroundChatOpacity()).toBe(0.05);
   });
 
   it("persists where the background is shown", () => {

@@ -5,6 +5,7 @@ import {
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
   chatBackgroundSrc,
+  loadChatBackgroundChatOpacity,
   loadChatBackgroundOpacity,
   loadChatBackgroundPath,
   loadChatBackgroundScope,
@@ -34,6 +35,9 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
   const [opacity, setOpacity] = useState(
     initial?.opacity ?? loadChatBackgroundOpacity(),
   );
+  const [chatOpacity, setChatOpacity] = useState(
+    initial?.chatOpacity ?? loadChatBackgroundChatOpacity(),
+  );
   const [scope, setScope] = useState<ChatBackgroundScope>(
     initial?.scope ?? loadChatBackgroundScope(),
   );
@@ -48,11 +52,13 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
   const save = (
     nextPath: string,
     nextOpacity: number,
+    nextChatOpacity: number,
     nextScope: ChatBackgroundScope,
   ) => {
     saveProjectChatBackground(project, {
       path: nextPath,
       opacity: nextOpacity,
+      chatOpacity: nextChatOpacity,
       scope: nextScope,
     });
     setRevision(projectChatBackgroundRevision());
@@ -64,7 +70,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
     try {
       const nextPath = await pickAndSaveProjectChatBackground(project);
       if (!nextPath) return;
-      save(nextPath, opacity, scope);
+      save(nextPath, opacity, chatOpacity, scope);
       setPath(nextPath);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -81,6 +87,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       clearProjectChatBackgroundSetting(project);
       setPath(null);
       setOpacity(loadChatBackgroundOpacity());
+      setChatOpacity(loadChatBackgroundChatOpacity());
       setScope(loadChatBackgroundScope());
       setRevision(projectChatBackgroundRevision());
     } catch (cause) {
@@ -96,12 +103,21 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       Math.max(CHAT_BACKGROUND_OPACITY_MIN, percent / 100),
     );
     setOpacity(next);
-    if (path) save(path, next, scope);
+    if (path) save(path, next, chatOpacity, scope);
+  };
+
+  const updateChatOpacity = (percent: number) => {
+    const next = Math.min(
+      CHAT_BACKGROUND_OPACITY_MAX,
+      Math.max(CHAT_BACKGROUND_OPACITY_MIN, percent / 100),
+    );
+    setChatOpacity(next);
+    if (path) save(path, opacity, next, scope);
   };
 
   const updateScope = (next: ChatBackgroundScope) => {
     setScope(next);
-    if (path) save(path, opacity, next);
+    if (path) save(path, opacity, chatOpacity, next);
   };
 
   return (
@@ -176,19 +192,36 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
           </div>
         </ProjectBackgroundRow>
 
-        <ProjectBackgroundRow label="Visibility">
+        <ProjectBackgroundRow label="Empty session">
           <div className="flex w-56 items-center gap-3">
             <input
               type="range"
               min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
               max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
               value={Math.round(opacity * 100)}
-              aria-label="Project background visibility"
+              aria-label="Project empty session background visibility"
               className="sidebar-opacity-slider min-w-0 flex-1"
               onChange={(event) => updateOpacity(Number(event.target.value))}
             />
             <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-content">
               {Math.round(opacity * 100)}%
+            </span>
+          </div>
+        </ProjectBackgroundRow>
+
+        <ProjectBackgroundRow label="During chat">
+          <div className="flex w-56 items-center gap-3">
+            <input
+              type="range"
+              min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
+              max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
+              value={Math.round(chatOpacity * 100)}
+              aria-label="Project in-chat background visibility"
+              className="sidebar-opacity-slider min-w-0 flex-1"
+              onChange={(event) => updateChatOpacity(Number(event.target.value))}
+            />
+            <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-content">
+              {Math.round(chatOpacity * 100)}%
             </span>
           </div>
         </ProjectBackgroundRow>

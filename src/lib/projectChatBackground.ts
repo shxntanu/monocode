@@ -2,6 +2,7 @@ import {
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
   CHAT_BACKGROUND_SCOPE_DEFAULT,
+  loadChatBackgroundChatOpacity,
   loadChatBackgroundOpacity,
   loadChatBackgroundScope,
   type ChatBackgroundScope,
@@ -15,6 +16,7 @@ export const PROJECT_CHAT_BACKGROUND_CHANGED =
 export type ProjectChatBackground = {
   path: string;
   opacity: number;
+  chatOpacity: number;
   scope: ChatBackgroundScope;
 };
 
@@ -64,9 +66,14 @@ export function loadProjectChatBackground(
     typeof stored.opacity === "number" && Number.isFinite(stored.opacity)
       ? clampOpacity(stored.opacity)
       : loadChatBackgroundOpacity();
+  const chatOpacity =
+    typeof stored.chatOpacity === "number" && Number.isFinite(stored.chatOpacity)
+      ? clampOpacity(stored.chatOpacity)
+      : loadChatBackgroundChatOpacity();
   return {
     path,
     opacity,
+    chatOpacity,
     scope: validScope(stored.scope) ? stored.scope : loadChatBackgroundScope(),
   };
 }
@@ -81,6 +88,7 @@ export function saveProjectChatBackground(
   next[project] = {
     path,
     opacity: clampOpacity(value.opacity),
+    chatOpacity: clampOpacity(value.chatOpacity),
     scope: validScope(value.scope)
       ? value.scope
       : CHAT_BACKGROUND_SCOPE_DEFAULT,

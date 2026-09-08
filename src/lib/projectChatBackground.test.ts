@@ -35,22 +35,26 @@ describe("project chat background settings", () => {
     saveProjectChatBackground("/work/alpha", {
       path: "/backgrounds/alpha.webp",
       opacity: 0.22,
+      chatOpacity: 0.11,
       scope: "empty",
     });
     saveProjectChatBackground("/work/beta", {
       path: "/backgrounds/beta.png",
       opacity: 0.48,
+      chatOpacity: 0.16,
       scope: "all",
     });
 
     expect(loadProjectChatBackground("/work/alpha")).toEqual({
       path: "/backgrounds/alpha.webp",
       opacity: 0.22,
+      chatOpacity: 0.11,
       scope: "empty",
     });
     expect(loadProjectChatBackground("/work/beta")).toEqual({
       path: "/backgrounds/beta.png",
       opacity: 0.48,
+      chatOpacity: 0.16,
       scope: "all",
     });
   });
@@ -59,16 +63,20 @@ describe("project chat background settings", () => {
     saveProjectChatBackground("/work/alpha", {
       path: "/backgrounds/alpha.webp",
       opacity: 1,
+      chatOpacity: 1,
       scope: "all",
     });
     saveProjectChatBackground("/work/beta", {
       path: "/backgrounds/beta.webp",
       opacity: 0,
+      chatOpacity: 0,
       scope: "all",
     });
 
     expect(loadProjectChatBackground("/work/alpha")?.opacity).toBe(0.65);
+    expect(loadProjectChatBackground("/work/alpha")?.chatOpacity).toBe(0.65);
     expect(loadProjectChatBackground("/work/beta")?.opacity).toBe(0.05);
+    expect(loadProjectChatBackground("/work/beta")?.chatOpacity).toBe(0.05);
   });
 
   it("falls back safely when stored project data is malformed", () => {
@@ -86,6 +94,7 @@ describe("project chat background settings", () => {
     expect(loadProjectChatBackground("/work/alpha")).toEqual({
       path: "/backgrounds/alpha.webp",
       opacity: 0.24,
+      chatOpacity: 0.12,
       scope: "all",
     });
   });
@@ -94,11 +103,13 @@ describe("project chat background settings", () => {
     saveProjectChatBackground("/work/alpha", {
       path: "/backgrounds/alpha.webp",
       opacity: 0.2,
+      chatOpacity: 0.1,
       scope: "empty",
     });
     saveProjectChatBackground("/work/beta", {
       path: "/backgrounds/beta.webp",
       opacity: 0.3,
+      chatOpacity: 0.15,
       scope: "all",
     });
 
