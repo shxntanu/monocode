@@ -206,42 +206,209 @@ export function subscribeLiveAgentsEnabled(onStoreChange: () => void) {
 }
 
 const GRID_ARCADE_ENABLED_KEY = "monocode.gridArcadeEnabled";
+const SESSION_BACKGROUND_KEY = "monocode.sessionBackground";
+const SESSION_BACKGROUND_IMAGE_KEY = "monocode.sessionBackgroundImage";
 
-export const GRID_ARCADE_ENABLED_DEFAULT = true;
+export type SessionBackground = "none" | "grid" | "arcade" | "image";
 
-/** Fired on `window` when the empty-session games setting flips. */
-export const GRID_ARCADE_ENABLED_CHANGE_EVENT =
-  "monocode:grid-arcade-enabled-change";
+export const SESSION_BACKGROUND_DEFAULT: SessionBackground = "arcade";
 
-export function loadGridArcadeEnabled(): boolean {
+/** Fired on `window` when the session background setting changes. */
+export const SESSION_BACKGROUND_CHANGE_EVENT =
+  "monocode:session-background-change";
+
+function isSessionBackground(value: unknown): value is SessionBackground {
+  return (
+    value === "none" ||
+    value === "grid" ||
+    value === "arcade" ||
+    value === "image"
+  );
+}
+
+export function loadSessionBackground(): SessionBackground {
   try {
-    const raw = localStorage.getItem(GRID_ARCADE_ENABLED_KEY);
-    if (raw == null) return GRID_ARCADE_ENABLED_DEFAULT;
-    return raw === "1" || raw === "true";
+    const raw = localStorage.getItem(SESSION_BACKGROUND_KEY);
+    if (isSessionBackground(raw)) return raw;
+    const legacy = localStorage.getItem(GRID_ARCADE_ENABLED_KEY);
+    if (legacy === "0" || legacy === "false") return "none";
+    return SESSION_BACKGROUND_DEFAULT;
   } catch {
-    return GRID_ARCADE_ENABLED_DEFAULT;
+    return SESSION_BACKGROUND_DEFAULT;
   }
 }
 
-export function saveGridArcadeEnabled(value: boolean) {
+export function saveSessionBackground(value: SessionBackground) {
+  const next = isSessionBackground(value) ? value : SESSION_BACKGROUND_DEFAULT;
   try {
-    localStorage.setItem(GRID_ARCADE_ENABLED_KEY, value ? "1" : "0");
+    localStorage.setItem(SESSION_BACKGROUND_KEY, next);
   } catch {
     // private mode / quota
   }
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent<boolean>(GRID_ARCADE_ENABLED_CHANGE_EVENT, {
-      detail: value,
+    new CustomEvent<SessionBackground>(SESSION_BACKGROUND_CHANGE_EVENT, {
+      detail: next,
     }),
   );
 }
 
-export function subscribeGridArcadeEnabled(onStoreChange: () => void) {
+export function loadSessionBackgroundImage(): string | null {
+  try {
+    return localStorage.getItem(SESSION_BACKGROUND_IMAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveSessionBackgroundImage(value: string | null) {
+  try {
+    if (value) localStorage.setItem(SESSION_BACKGROUND_IMAGE_KEY, value);
+    else localStorage.removeItem(SESSION_BACKGROUND_IMAGE_KEY);
+  } catch {
+    // private mode / quota
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<SessionBackground>(SESSION_BACKGROUND_CHANGE_EVENT, {
+      detail: loadSessionBackground(),
+    }),
+  );
+}
+
+export function subscribeSessionBackground(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
-  window.addEventListener(GRID_ARCADE_ENABLED_CHANGE_EVENT, onStoreChange);
+  window.addEventListener(SESSION_BACKGROUND_CHANGE_EVENT, onStoreChange);
   return () =>
-    window.removeEventListener(GRID_ARCADE_ENABLED_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener(SESSION_BACKGROUND_CHANGE_EVENT, onStoreChange);
+}
+
+const SESSION_BACKGROUND_PERSIST_KEY = "monocode.sessionBackgroundPersist";
+const SESSION_BACKGROUND_OPACITY_KEY = "monocode.sessionBackgroundOpacity";
+const SESSION_BACKGROUND_EMPTY_OPACITY_KEY =
+  "monocode.sessionBackgroundEmptyOpacity";
+
+export const SESSION_BACKGROUND_PERSIST_DEFAULT = false;
+
+export const SESSION_BACKGROUND_OPACITY_MIN = 10;
+export const SESSION_BACKGROUND_OPACITY_MAX = 100;
+/** Background intensity while chatting with a transcript visible. */
+export const SESSION_BACKGROUND_OPACITY_DEFAULT = 100;
+/** Background intensity on the empty prompt screen. */
+export const SESSION_BACKGROUND_EMPTY_OPACITY_DEFAULT = 100;
+
+export function loadSessionBackgroundPersist(): boolean {
+  try {
+    const raw = localStorage.getItem(SESSION_BACKGROUND_PERSIST_KEY);
+    if (raw == null) return SESSION_BACKGROUND_PERSIST_DEFAULT;
+    return raw === "1" || raw === "true";
+  } catch {
+    return SESSION_BACKGROUND_PERSIST_DEFAULT;
+  }
+}
+
+export function saveSessionBackgroundPersist(value: boolean) {
+  try {
+    localStorage.setItem(SESSION_BACKGROUND_PERSIST_KEY, value ? "1" : "0");
+  } catch {
+    // private mode / quota
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(SESSION_BACKGROUND_CHANGE_EVENT, {
+      detail: loadSessionBackground(),
+    }),
+  );
+}
+
+export function loadSessionBackgroundOpacity(): number {
+  return loadSessionBackgroundChatOpacity();
+}
+
+export function saveSessionBackgroundOpacity(value: number) {
+  saveSessionBackgroundChatOpacity(value);
+}
+
+function clampSessionBackgroundOpacity(value: number): number {
+  return Math.round(
+    Math.min(
+      SESSION_BACKGROUND_OPACITY_MAX,
+      Math.max(SESSION_BACKGROUND_OPACITY_MIN, value),
+    ),
+  );
+}
+
+export function loadSessionBackgroundEmptyOpacity(): number {
+  try {
+    const raw = localStorage.getItem(SESSION_BACKGROUND_EMPTY_OPACITY_KEY);
+    if (raw != null) {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) {
+        return clampSessionBackgroundOpacity(parsed);
+      }
+    }
+    const legacy = localStorage.getItem(SESSION_BACKGROUND_OPACITY_KEY);
+    if (legacy != null) {
+      const parsed = Number(legacy);
+      if (Number.isFinite(parsed)) {
+        return clampSessionBackgroundOpacity(parsed);
+      }
+    }
+    return SESSION_BACKGROUND_EMPTY_OPACITY_DEFAULT;
+  } catch {
+    return SESSION_BACKGROUND_EMPTY_OPACITY_DEFAULT;
+  }
+}
+
+export function saveSessionBackgroundEmptyOpacity(value: number) {
+  const next = clampSessionBackgroundOpacity(value);
+  try {
+    localStorage.setItem(SESSION_BACKGROUND_EMPTY_OPACITY_KEY, String(next));
+  } catch {
+    // private mode / quota
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(SESSION_BACKGROUND_CHANGE_EVENT, {
+      detail: loadSessionBackground(),
+    }),
+  );
+}
+
+export function loadSessionBackgroundChatOpacity(): number {
+  try {
+    const raw = localStorage.getItem(SESSION_BACKGROUND_OPACITY_KEY);
+    if (raw == null) return SESSION_BACKGROUND_OPACITY_DEFAULT;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return SESSION_BACKGROUND_OPACITY_DEFAULT;
+    return clampSessionBackgroundOpacity(parsed);
+  } catch {
+    return SESSION_BACKGROUND_OPACITY_DEFAULT;
+  }
+}
+
+export function saveSessionBackgroundChatOpacity(value: number) {
+  const next = clampSessionBackgroundOpacity(value);
+  try {
+    localStorage.setItem(SESSION_BACKGROUND_OPACITY_KEY, String(next));
+  } catch {
+    // private mode / quota
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(SESSION_BACKGROUND_CHANGE_EVENT, {
+      detail: loadSessionBackground(),
+    }),
+  );
+}
+
+/** Whether a session pane should render the configured background. */
+export function sessionBackgroundVisible(
+  background: SessionBackground,
+  persist: boolean,
+  isEmpty: boolean,
+): boolean {
+  return background !== "none" && (isEmpty || persist);
 }
 
 const DIFF_VIEWER_KEY = "monocode.diffViewer";

@@ -19,6 +19,8 @@ type Props = {
   harness: HarnessId;
   model: string;
   values: Record<string, string>;
+  /** Match empty-session composer elevation for readable chips and menus. */
+  elevated?: string;
   onChange: (settings: Record<string, string>) => void;
   onClose?: () => void;
 };
@@ -29,6 +31,7 @@ export function ModelSettings({
   harness,
   model,
   values,
+  elevated,
   onChange,
   onClose,
 }: Props) {
@@ -68,6 +71,7 @@ export function ModelSettings({
             key={setting.id}
             setting={setting}
             value={values[setting.id] ?? setting.value}
+            elevated={elevated}
             onChange={(value) => setValue(setting.id, value)}
           />
         ) : (
@@ -75,6 +79,7 @@ export function ModelSettings({
             key={setting.id}
             setting={setting}
             value={values[setting.id] ?? setting.value}
+            elevated={elevated}
             onChange={(value) => setValue(setting.id, value)}
             onClose={onClose}
           />
@@ -93,10 +98,12 @@ function useSyncCatalog(): number {
 function ToggleSetting({
   setting,
   value,
+  elevated,
   onChange,
 }: {
   setting: ModelSetting;
   value: string;
+  elevated?: string;
   onChange: (value: string) => void;
 }) {
   const on = value === "true";
@@ -111,9 +118,11 @@ function ToggleSetting({
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => onChange(on ? "false" : "true")}
       className={`flex h-6.5 items-center gap-1 rounded-md px-1.5 ${
-        on
-          ? "bg-content/20 text-content"
-          : "bg-content/10 text-content/50 hover:bg-content/15 hover:text-content"
+        elevated
+          ? `session-composer-chip${on ? " session-composer-chip-open" : ""}`
+          : on
+            ? "bg-content/20 text-content"
+            : "bg-content/10 text-content/50 hover:bg-content/15 hover:text-content"
       }`}
     >
       <Icon className="size-3.5 shrink-0" strokeWidth={1.75} />
@@ -125,11 +134,13 @@ function ToggleSetting({
 function SelectSetting({
   setting,
   value,
+  elevated,
   onChange,
   onClose,
 }: {
   setting: ModelSetting;
   value: string;
+  elevated?: string;
   onChange: (value: string) => void;
   onClose?: () => void;
 }) {
@@ -203,9 +214,11 @@ function SelectSetting({
           setOpen(true);
         }}
         className={`flex h-6.5 max-w-36 items-center gap-1 rounded-md px-1.5 ${
-          open
-            ? "bg-content/10 text-content"
-            : "bg-content/10 text-content hover:bg-content/15"
+          elevated
+            ? `session-composer-chip${open ? " session-composer-chip-open" : ""}`
+            : open
+              ? "bg-content/10 text-content"
+              : "bg-content/10 text-content hover:bg-content/15"
         }`}
       >
         <Icon className="size-3.5 shrink-0" strokeWidth={1.75} />
@@ -213,7 +226,7 @@ function SelectSetting({
           {current?.label ?? setting.label}
         </span>
         <ChevronDown
-          className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
+          className={`size-3 shrink-0 ${elevated ? "session-composer-chip-muted" : "text-content/50"} ${open ? "rotate-180" : ""}`}
           strokeWidth={1.75}
         />
       </button>
@@ -223,13 +236,14 @@ function SelectSetting({
           side="top"
           width={MENU_WIDTH}
           autoFocus
+          elevated={elevated}
           onDismiss={(reason) => dismiss(reason === "escape")}
           role="listbox"
           aria-label={setting.label}
           data-model-settings
           tabIndex={-1}
           onKeyDown={onMenuKey}
-          className="p-1"
+          className={`p-1${elevated ? " session-composer-popover" : ""}`}
         >
           {setting.options.map((option, index) => {
             const selected = option.value === value;

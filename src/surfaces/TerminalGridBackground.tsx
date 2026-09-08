@@ -494,14 +494,14 @@ export function TerminalGridBackground() {
       className={
         playing
           ? "absolute inset-0 z-20 overflow-hidden bg-background-base outline-none"
-          : "group pointer-events-auto absolute inset-x-0 top-0 z-0 h-48"
+          : "group pointer-events-auto absolute inset-0 z-0"
       }
     >
       <div
         className={
           playing
             ? "absolute inset-0 overflow-hidden"
-            : "absolute inset-0 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_65%,transparent_100%)]"
+            : "absolute inset-0 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_80%,rgba(0,0,0,0.25)_100%)]"
         }
       >
         <div

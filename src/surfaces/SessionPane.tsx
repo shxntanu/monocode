@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { Composer } from "../chrome/Composer";
@@ -38,10 +39,21 @@ import {
   type QuoteRequest,
 } from "../lib/quoteDraft";
 import { createNote, noteTitle } from "../lib/notes";
-import { loadNotesEnabled, subscribeNotesEnabled } from "../lib/settings";
+import {
+  loadNotesEnabled,
+  sessionBackgroundVisible,
+  subscribeNotesEnabled,
+} from "../lib/settings";
+import {
+  useSessionBackground,
+  useSessionBackgroundEmptyOpacity,
+  useSessionBackgroundChatOpacity,
+  useSessionBackgroundPersist,
+} from "../hooks/useSessionBackground";
 import { resolveModel } from "../lib/models";
 import { isAstraModel } from "../lib/astraWelcome";
 import { AstraWelcome } from "./AstraWelcome";
+import { SessionBackground } from "./SessionBackground";
 
 type Props = {
   session: Session;
@@ -235,6 +247,16 @@ export const SessionPane = memo(function SessionPane({
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionWorkCwd(session);
   const isEmpty = session.blocks.length === 0;
+  const sessionBackground = useSessionBackground();
+  const sessionBackgroundPersist = useSessionBackgroundPersist();
+  const sessionBackgroundEmptyOpacity = useSessionBackgroundEmptyOpacity();
+  const sessionBackgroundChatOpacity = useSessionBackgroundChatOpacity();
+  const sessionBackgroundOpacity = isEmpty
+    ? sessionBackgroundEmptyOpacity
+    : sessionBackgroundChatOpacity;
+  const showSessionBackground =
+    !session.inboxAsk &&
+    sessionBackgroundVisible(sessionBackground, sessionBackgroundPersist, isEmpty);
   const showDeckProjectPicker = isEmpty && !looksLikeProject(session.cwd);
   const dockComposer = !isEmpty || inSplit || !!session.inboxAsk;
   const draftRef = useRef<string | undefined>(undefined);
@@ -334,9 +356,22 @@ export const SessionPane = memo(function SessionPane({
   return (
     <div
       data-session-drop={session.id}
+      data-session-has-background={showSessionBackground ? "true" : undefined}
+      style={
+        showSessionBackground
+          ? ({
+              ["--session-background-opacity" as string]: String(
+                sessionBackgroundOpacity / 100,
+              ),
+            } as CSSProperties)
+          : undefined
+      }
       className="relative isolate flex h-full min-h-0 min-w-0 flex-1 flex-col"
       onMouseDown={() => onFocus(session.id)}
     >
+      {showSessionBackground ? (
+        <SessionBackground interactive={isEmpty} />
+      ) : null}
       {astraWelcomeRun !== null && visible ? (
         <AstraWelcome key={astraWelcomeRun} onDone={dismissAstraWelcome} />
       ) : null}
@@ -388,6 +423,12 @@ export const SessionPane = memo(function SessionPane({
         </div>
       ) : null}
       <div className="relative min-h-0 flex-1">
+        {showSessionBackground && !isEmpty ? (
+          <div
+            aria-hidden
+            className="session-bg-transcript-scrim pointer-events-none absolute inset-0 z-[1]"
+          />
+        ) : null}
         {isEmpty ? (
           session.inboxAsk ? (
             <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
@@ -401,6 +442,7 @@ export const SessionPane = memo(function SessionPane({
           )
         ) : (
           <>
+            <div className={showSessionBackground ? "relative z-[2] h-full min-h-0" : "h-full min-h-0"}>
             <AgentTranscript
               blocks={session.blocks}
               busy={!!session.busy}
@@ -431,6 +473,7 @@ export const SessionPane = memo(function SessionPane({
               onJumpToBottomChange={setShowJumpToBottom}
               onJumpToBottomReady={onJumpToBottomReady}
             />
+            </div>
             {showJumpToBottom ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-2 z-30 flex justify-center">
                 <button
@@ -449,7 +492,7 @@ export const SessionPane = memo(function SessionPane({
         )}
       </div>
       {dockComposer ? (
-        <div className="mx-auto w-full max-w-4xl shrink-0">{composer}</div>
+        <div className={`mx-auto w-full max-w-4xl shrink-0${showSessionBackground ? " relative z-[2]" : ""}`}>{composer}</div>
       ) : null}
     </div>
   );

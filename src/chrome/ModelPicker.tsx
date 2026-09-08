@@ -50,6 +50,8 @@ type Props = {
   harness: HarnessId;
   model: string;
   hotkeys?: boolean;
+  /** Match empty-session composer elevation for readable chips and menus. */
+  elevated?: string;
   onChange: (harness: HarnessId, model: string) => void;
   onClose?: () => void;
 };
@@ -62,6 +64,7 @@ export function ModelPicker({
   harness,
   model,
   hotkeys = false,
+  elevated,
   onChange,
   onClose,
 }: Props) {
@@ -311,15 +314,17 @@ export function ModelPicker({
           openPicker();
         }}
         className={`flex h-6.5 max-w-52 items-center gap-1 rounded-md px-1.5 ${
-          open
-            ? "bg-content/10 text-content"
-            : "bg-content/10 text-content hover:bg-content/15"
+          elevated
+            ? `session-composer-chip${open ? " session-composer-chip-open" : ""}`
+            : open
+              ? "bg-content/10 text-content"
+              : "bg-content/10 text-content hover:bg-content/15"
         }`}
       >
         <HarnessIcon harness={current.harness} className="size-4 shrink-0" />
         <span className="min-w-0 truncate text-[11px]">{current.name}</span>
         <ChevronDown
-          className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
+          className={`size-3 shrink-0 ${elevated ? "session-composer-chip-muted" : "text-content/50"} ${open ? "rotate-180" : ""}`}
           strokeWidth={1.75}
         />
       </button>
@@ -330,12 +335,13 @@ export function ModelPicker({
           width={MENU_WIDTH}
           minHeight={MENU_MIN_HEIGHT}
           maxHeight={MENU_MAX_HEIGHT}
+          elevated={elevated}
           onDismiss={() => dismiss(false)}
           dismissOnEscape={false}
           role="dialog"
           aria-label="Model picker"
           data-model-picker
-          className="flex flex-col overflow-hidden"
+          className={`flex flex-col overflow-hidden${elevated ? " session-composer-popover" : ""}`}
         >
           <nav
             role="tablist"

@@ -122,6 +122,8 @@ import {
   type LinearTeam,
 } from "../lib/linear";
 import { loadTabGroupLabels, resolveTabGroupLabel } from "../lib/tabGroups";
+import { pickImageFile } from "../lib/projectLogos";
+import { basename } from "../lib/fs";
 import {
   filterKeybindings,
   KEYBINDINGS,
@@ -129,16 +131,28 @@ import {
   loadComposerRunner,
   loadDiffViewer,
   loadFollowUpBehavior,
-  loadGridArcadeEnabled,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
+  loadSessionBackground,
+  loadSessionBackgroundImage,
+  loadSessionBackgroundEmptyOpacity,
+  loadSessionBackgroundChatOpacity,
+  loadSessionBackgroundPersist,
   saveClaudeHooks,
   saveComposerRunner,
   saveDiffViewer,
   saveFollowUpBehavior,
-  saveGridArcadeEnabled,
   saveLiveAgentsEnabled,
   saveNotesEnabled,
+  saveSessionBackground,
+  saveSessionBackgroundImage,
+  saveSessionBackgroundEmptyOpacity,
+  saveSessionBackgroundChatOpacity,
+  saveSessionBackgroundPersist,
+  SESSION_BACKGROUND_CHANGE_EVENT,
+  SESSION_BACKGROUND_OPACITY_MAX,
+  SESSION_BACKGROUND_OPACITY_MIN,
+  type SessionBackground,
   settingsSectionDescription,
   settingsSectionLabel,
   type DiffViewer,
@@ -287,9 +301,6 @@ function GeneralPage({
   const [followUpBehavior, setFollowUpBehavior] =
     useState<FollowUpBehavior>(loadFollowUpBehavior);
   const [composerRunner, setComposerRunner] = useState(loadComposerRunner);
-  const [gridArcadeEnabled, setGridArcadeEnabled] = useState(
-    loadGridArcadeEnabled,
-  );
   const [notesEnabled, setNotesEnabled] = useState(loadNotesEnabled);
   const [liveAgentsEnabled, setLiveAgentsEnabled] = useState(
     loadLiveAgentsEnabled,
@@ -347,11 +358,6 @@ function GeneralPage({
   const onComposerRunner = (next: boolean) => {
     saveComposerRunner(next);
     setComposerRunner(next);
-  };
-
-  const onGridArcadeEnabled = (next: boolean) => {
-    saveGridArcadeEnabled(next);
-    setGridArcadeEnabled(next);
   };
 
   const onNotesEnabled = (next: boolean) => {
@@ -443,16 +449,6 @@ function GeneralPage({
           label="Composer mascot"
           on={composerRunner}
           onChange={onComposerRunner}
-        />
-      </Row>
-      <Row
-        label="Empty session games"
-        description="Pac-man and snake idle on the empty-session grid. Hover the band to take control of whichever is on screen. Turn this off to keep the pane still."
-      >
-        <Toggle
-          label="Empty session games"
-          on={gridArcadeEnabled}
-          onChange={onGridArcadeEnabled}
         />
       </Row>
       <Row
@@ -840,6 +836,74 @@ function useAppearanceSettings() {
 
 function AppearancePage({ appearance }: { appearance: AppearanceSettings }) {
   const percent = Math.round(appearance.opacity * 100);
+  const [sessionBackground, setSessionBackground] = useState(loadSessionBackground);
+  const [sessionBackgroundImage, setSessionBackgroundImage] = useState(
+    loadSessionBackgroundImage,
+  );
+  const [sessionBackgroundPersist, setSessionBackgroundPersist] = useState(
+    loadSessionBackgroundPersist,
+  );
+  const [sessionBackgroundEmptyOpacity, setSessionBackgroundEmptyOpacity] =
+    useState(loadSessionBackgroundEmptyOpacity);
+  const [sessionBackgroundChatOpacity, setSessionBackgroundChatOpacity] =
+    useState(loadSessionBackgroundChatOpacity);
+  const [pickingImage, setPickingImage] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => {
+      setSessionBackground(loadSessionBackground());
+      setSessionBackgroundImage(loadSessionBackgroundImage());
+      setSessionBackgroundPersist(loadSessionBackgroundPersist());
+      setSessionBackgroundEmptyOpacity(loadSessionBackgroundEmptyOpacity());
+      setSessionBackgroundChatOpacity(loadSessionBackgroundChatOpacity());
+    };
+    window.addEventListener(SESSION_BACKGROUND_CHANGE_EVENT, onChange);
+    return () =>
+      window.removeEventListener(SESSION_BACKGROUND_CHANGE_EVENT, onChange);
+  }, []);
+
+  const onSessionBackground = (next: SessionBackground) => {
+    saveSessionBackground(next);
+    setSessionBackground(next);
+  };
+
+  const onSessionBackgroundPersist = (next: boolean) => {
+    saveSessionBackgroundPersist(next);
+    setSessionBackgroundPersist(next);
+  };
+
+  const onSessionBackgroundEmptyOpacity = (next: number) => {
+    saveSessionBackgroundEmptyOpacity(next);
+    setSessionBackgroundEmptyOpacity(next);
+  };
+
+  const onSessionBackgroundChatOpacity = (next: number) => {
+    saveSessionBackgroundChatOpacity(next);
+    setSessionBackgroundChatOpacity(next);
+  };
+
+  const onPickBackgroundImage = async () => {
+    setPickingImage(true);
+    try {
+      const path = await pickImageFile();
+      if (!path) return;
+      saveSessionBackgroundImage(path);
+      saveSessionBackground("image");
+      setSessionBackgroundImage(path);
+      setSessionBackground("image");
+    } finally {
+      setPickingImage(false);
+    }
+  };
+
+  const onClearBackgroundImage = () => {
+    saveSessionBackgroundImage(null);
+    setSessionBackgroundImage(null);
+    if (sessionBackground === "image") {
+      saveSessionBackground("grid");
+      setSessionBackground("grid");
+    }
+  };
 
   return (
     <>
@@ -909,6 +973,92 @@ function AppearancePage({ appearance }: { appearance: AppearanceSettings }) {
           onChange={(value) => appearance.onTint(appearance.themeHue, value)}
         />
       </Row>
+      <Row
+        label="Session background"
+        description="Background behind chat sessions. Grid is a static pattern; Arcade adds pac-man and snake on empty sessions. Image uses a picture from disk."
+      >
+        <div className="flex flex-col items-end gap-2">
+          <Segmented
+            label="Session background"
+            value={sessionBackground}
+            className="w-52"
+            options={[
+              { value: "none", label: "None" },
+              { value: "grid", label: "Grid" },
+              { value: "arcade", label: "Arcade" },
+              { value: "image", label: "Image" },
+            ]}
+            onChange={onSessionBackground}
+          />
+          {sessionBackground === "image" ? (
+            <div className="flex max-w-52 flex-wrap items-center justify-end gap-2">
+              {sessionBackgroundImage ? (
+                <span
+                  className="min-w-0 truncate text-[11px] text-content/45"
+                  title={sessionBackgroundImage}
+                >
+                  {basename(sessionBackgroundImage)}
+                </span>
+              ) : null}
+              <SecondaryButton
+                onClick={() => void onPickBackgroundImage()}
+                disabled={pickingImage}
+              >
+                {pickingImage
+                  ? "Choosing…"
+                  : sessionBackgroundImage
+                    ? "Replace"
+                    : "Choose image"}
+              </SecondaryButton>
+              {sessionBackgroundImage ? (
+                <SecondaryButton onClick={onClearBackgroundImage}>
+                  Clear
+                </SecondaryButton>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </Row>
+      {sessionBackground !== "none" ? (
+        <>
+          <Row
+            label="Keep background during chat"
+            description="Show the session background behind the transcript after the first message, not just on the empty prompt screen."
+          >
+            <Toggle
+              label="Keep background during chat"
+              on={sessionBackgroundPersist}
+              onChange={onSessionBackgroundPersist}
+            />
+          </Row>
+          <Row
+            label="Prompt screen intensity"
+            description="How visible the background is on the empty composer screen, before the first message."
+          >
+            <Slider
+              label="Prompt screen intensity"
+              value={sessionBackgroundEmptyOpacity}
+              display={`${sessionBackgroundEmptyOpacity}%`}
+              min={SESSION_BACKGROUND_OPACITY_MIN}
+              max={SESSION_BACKGROUND_OPACITY_MAX}
+              onChange={onSessionBackgroundEmptyOpacity}
+            />
+          </Row>
+          <Row
+            label="Chat intensity"
+            description="How visible the background is once the transcript is showing. Lower this to keep wallpaper and patterns from competing with messages."
+          >
+            <Slider
+              label="Chat intensity"
+              value={sessionBackgroundChatOpacity}
+              display={`${sessionBackgroundChatOpacity}%`}
+              min={SESSION_BACKGROUND_OPACITY_MIN}
+              max={SESSION_BACKGROUND_OPACITY_MAX}
+              onChange={onSessionBackgroundChatOpacity}
+            />
+          </Row>
+        </>
+      ) : null}
       <Row
         label="Main pane glass"
         description="Extend the translucent treatment to the main pane behind sessions and editors."
@@ -1379,17 +1529,19 @@ function Segmented<T extends string>({
   value,
   options,
   onChange,
+  className,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  className?: string;
 }) {
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className="grid w-40 gap-0.5 rounded-md border border-content/10 p-0.5 text-[12px]"
+      className={`grid gap-0.5 rounded-md border border-content/10 p-0.5 text-[12px] ${className ?? "w-40"}`}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((option) => (

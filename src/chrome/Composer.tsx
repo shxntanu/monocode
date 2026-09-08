@@ -101,6 +101,7 @@ import { SkillPicker } from "./SkillPicker";
 import { projectKey } from "../lib/paths";
 import { consumeQuoteRequest, type QuoteRequest } from "../lib/quoteDraft";
 import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
+import { useComposerBackgroundElevated } from "../hooks/useSessionBackground";
 import {
   COMPOSER_RUNNER_CHANGE_EVENT,
   loadComposerRunner,
@@ -469,6 +470,7 @@ export function Composer({
   );
   const groupLogos = useTabGroupLogos();
   const projectLogoPath = resolveTabGroupLogo(projectKey(cwd), groupLogos);
+  const composerElevated = useComposerBackgroundElevated(shell);
 
   slashRef.current = slash;
   mentionRef.current = mention;
@@ -1056,6 +1058,7 @@ export function Composer({
   return (
     <div
       data-composer
+      data-composer-elevated={composerElevated}
       className={`relative shrink-0 ${shell ? "" : "p-1.5 pt-0"}`}
       onMouseDown={onFocus}
     >
@@ -1147,7 +1150,9 @@ export function Composer({
         <div
           ref={boxRef}
           data-composer-box
-          className={`relative z-10 rounded-lg border bg-content/3 ${
+          className={`relative z-10 rounded-lg border ${
+            composerElevated ? "session-composer-surface" : "bg-content/3"
+          } ${
             fileDrag
               ? "border-accent/60"
               : "border-content/10 has-focus:border-content/20"
@@ -1372,6 +1377,7 @@ export function Composer({
                   harness={harness}
                   model={model}
                   hotkeys={hotkeys && enabled}
+                  elevated={composerElevated}
                   onChange={onModelChange}
                   onClose={() => ref.current?.focus()}
                 />
@@ -1379,12 +1385,14 @@ export function Composer({
                   harness={harness}
                   model={model}
                   values={modelSettings}
+                  elevated={composerElevated}
                   onChange={(settings) => onModelSettingsChange?.(settings)}
                   onClose={() => ref.current?.focus()}
                 />
                 {harness !== "fx" ? (
                   <AccessPicker
                     value={runtimeMode}
+                    elevated={composerElevated}
                     onChange={onRuntimeModeChange}
                     onClose={() => ref.current?.focus()}
                   />

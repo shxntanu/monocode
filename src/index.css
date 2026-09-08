@@ -120,6 +120,246 @@ html.has-native-glass .sidebar-glass {
   background: var(--color-background-base);
 }
 
+/* Empty-session grid — matches TerminalGridBackground cell pitch (6px + 1px gap). */
+.session-grid-bg {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--color-content) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-content) 6%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 7px 7px;
+  mask-image: linear-gradient(
+    to bottom,
+    #000 80%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+}
+
+.session-background-root {
+  opacity: var(--session-background-opacity, 1);
+}
+
+.session-bg-transcript-scrim {
+  background: color-mix(in srgb, var(--color-background-base) 52%, transparent);
+  opacity: calc(1.15 - var(--session-background-opacity, 1) * 0.65);
+}
+
+.session-bg-image-layer {
+  opacity: 1;
+}
+
+.session-bg-image-overlay {
+  background: color-mix(in srgb, var(--color-background-base) 52%, transparent);
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.15) 0%,
+    #000 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+.session-bg-image-vignette {
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 88%,
+    color-mix(in srgb, var(--color-background-base) 72%, transparent),
+    transparent 72%
+  );
+}
+
+/*
+ * Empty-session composer contrast. Image backgrounds sample the wallpaper
+ * behind the composer and pick a darker or lighter frosted panel.
+ */
+[data-composer-elevated="grid"] [data-composer-box],
+[data-composer-elevated="arcade"] [data-composer-box] {
+  background: color-mix(in srgb, var(--color-background-base) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-color: color-mix(in srgb, var(--color-content) 16%, transparent);
+  box-shadow: 0 8px 28px color-mix(in srgb, black 28%, transparent);
+}
+
+[data-composer-elevated="grid"],
+[data-composer-elevated="arcade"] {
+  --session-composer-bg: color-mix(in srgb, var(--color-background-base) 82%, transparent);
+  --session-composer-border: color-mix(in srgb, var(--color-content) 16%, transparent);
+  --session-composer-text: var(--color-content);
+  --session-composer-muted: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+[data-composer-elevated="image"],
+[data-composer-elevated="image-light"] {
+  --session-composer-bg: color-mix(in srgb, #07080a 94%, transparent);
+  --session-composer-border: color-mix(in srgb, #ffffff 14%, transparent);
+  --session-composer-text: hsl(var(--theme-hue) var(--theme-saturation) 94%);
+  --session-composer-muted: hsl(var(--theme-hue) var(--theme-saturation) 68%);
+}
+
+[data-composer-elevated="image-dark"] {
+  --session-composer-bg: color-mix(in srgb, var(--color-background-base) 90%, transparent);
+  --session-composer-border: color-mix(in srgb, var(--color-content) 18%, transparent);
+  --session-composer-text: var(--color-content);
+  --session-composer-muted: color-mix(in srgb, var(--color-content) 58%, transparent);
+}
+
+html.theme-light [data-composer-elevated="image-light"] {
+  --session-composer-bg: color-mix(in srgb, var(--color-background-base) 96%, transparent);
+  --session-composer-border: color-mix(in srgb, var(--color-content) 20%, transparent);
+  --session-composer-text: var(--color-content);
+  --session-composer-muted: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+[data-composer-elevated="image"] [data-composer-box],
+[data-composer-elevated="image-light"] [data-composer-box],
+[data-composer-elevated="image-dark"] [data-composer-box] {
+  background: var(--session-composer-bg);
+  backdrop-filter: blur(20px);
+  border-color: var(--session-composer-border);
+  box-shadow:
+    0 10px 36px color-mix(in srgb, black 42%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-content) 6%, transparent);
+}
+
+.session-composer-surface {
+  color: var(--session-composer-text);
+}
+
+.session-composer-surface [class*="text-content/"] {
+  color: var(--session-composer-muted);
+}
+
+.session-composer-surface .composer-highlight {
+  color: var(--session-composer-text, var(--color-content));
+}
+
+.session-composer-surface .composer-field {
+  color: transparent;
+  caret-color: var(--session-composer-text);
+}
+
+.session-composer-surface .composer-field::placeholder {
+  color: var(--session-composer-muted);
+  -webkit-text-fill-color: var(--session-composer-muted);
+}
+
+.session-composer-chip {
+  background: color-mix(
+    in srgb,
+    var(--session-composer-text, var(--color-content)) 10%,
+    var(--session-composer-bg, var(--color-background-base))
+  );
+  color: var(--session-composer-text, var(--color-content));
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--session-composer-border, var(--color-content)) 70%,
+      transparent
+    );
+  box-shadow: 0 2px 10px color-mix(in srgb, black 18%, transparent);
+}
+
+.session-composer-chip:hover,
+.session-composer-chip-open {
+  background: color-mix(
+    in srgb,
+    var(--session-composer-text, var(--color-content)) 16%,
+    var(--session-composer-bg, var(--color-background-base))
+  );
+}
+
+.session-composer-chip-muted {
+  color: var(--session-composer-muted, color-mix(in srgb, var(--color-content) 55%, transparent));
+}
+
+.session-composer-popover-backdrop {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--session-composer-bg, color-mix(in srgb, var(--color-background-base) 92%, transparent));
+  backdrop-filter: blur(20px);
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.session-composer-popover-frame {
+  border-color: var(--session-composer-border, color-mix(in srgb, var(--color-content) 18%, transparent));
+  box-shadow:
+    0 10px 36px color-mix(in srgb, black 42%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-content) 6%, transparent);
+}
+
+.session-composer-popover {
+  color: var(--session-composer-text, var(--color-content));
+}
+
+.session-composer-popover [class*="text-content/"] {
+  color: var(--session-composer-muted, color-mix(in srgb, var(--color-content) 55%, transparent));
+}
+
+.session-composer-popover [class*="border-content"] {
+  border-color: color-mix(
+    in srgb,
+    var(--session-composer-border, var(--color-content)) 55%,
+    transparent
+  );
+}
+
+[data-composer-elevated="image"] .composer-highlight,
+[data-composer-elevated="image-light"] .composer-highlight,
+[data-composer-elevated="image-dark"] .composer-highlight,
+[data-composer-elevated="image"] .composer-field,
+[data-composer-elevated="image-light"] .composer-field,
+[data-composer-elevated="image-dark"] .composer-field {
+  caret-color: var(--session-composer-text);
+}
+
+[data-composer-elevated="image"] .composer-field::placeholder,
+[data-composer-elevated="image-light"] .composer-field::placeholder,
+[data-composer-elevated="image-dark"] .composer-field::placeholder {
+  color: var(--session-composer-muted);
+  -webkit-text-fill-color: var(--session-composer-muted);
+}
+
+[data-session-background="grid"] .session-empty-title,
+[data-session-background="arcade"] .session-empty-title {
+  text-shadow: 0 1px 16px color-mix(in srgb, var(--color-background-base) 88%, transparent);
+}
+
+[data-session-background="image"] .session-empty-title {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  background: var(--session-composer-bg, color-mix(in srgb, #07080a 94%, transparent));
+  border: 1px solid var(--session-composer-border, color-mix(in srgb, #ffffff 14%, transparent));
+  color: var(--session-composer-text, hsl(var(--theme-hue) var(--theme-saturation) 94%));
+  backdrop-filter: blur(16px);
+  box-shadow: 0 6px 24px color-mix(in srgb, black 32%, transparent);
+}
+
+[data-session-background="image"] {
+  --session-composer-bg: color-mix(in srgb, #07080a 94%, transparent);
+  --session-composer-border: color-mix(in srgb, #ffffff 14%, transparent);
+  --session-composer-text: hsl(var(--theme-hue) var(--theme-saturation) 94%);
+}
+
+[data-session-background="image"][data-composer-contrast="dark"] {
+  --session-composer-bg: color-mix(in srgb, var(--color-background-base) 90%, transparent);
+  --session-composer-border: color-mix(in srgb, var(--color-content) 18%, transparent);
+  --session-composer-text: var(--color-content);
+}
+
+html.theme-light [data-session-background="image"][data-composer-contrast="light"] {
+  --session-composer-bg: color-mix(in srgb, var(--color-background-base) 96%, transparent);
+  --session-composer-border: color-mix(in srgb, var(--color-content) 20%, transparent);
+  --session-composer-text: var(--color-content);
+}
+
 .transcript-turn {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 240px;

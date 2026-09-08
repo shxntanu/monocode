@@ -51,6 +51,8 @@ type Props = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   dismissOnEscape?: boolean;
   /** A pointer landing inside anything matching this selector is not outside. */
   ignore?: string;
+  /** Match `data-composer-elevated` so portaled popovers inherit session contrast. */
+  elevated?: string;
   ref?: Ref<HTMLDivElement>;
 };
 
@@ -143,6 +145,7 @@ export function Popover({
   onDismiss,
   dismissOnEscape = true,
   ignore,
+  elevated,
   ref,
   children,
   ...rest
@@ -251,10 +254,24 @@ export function Popover({
     <div
       ref={frame}
       data-popover-side={position?.side ?? side}
+      data-composer-elevated={elevated}
       style={{ ...placed, zIndex: layer }}
-      className={bare ? undefined : FRAME}
+      className={
+        bare
+          ? undefined
+          : elevated
+            ? `${FRAME} session-composer-popover-frame`
+            : FRAME
+      }
     >
-      {bare ? null : <div aria-hidden="true" className={BACKDROP} />}
+      {bare ? null : (
+        <div
+          aria-hidden="true"
+          className={
+            elevated ? "session-composer-popover-backdrop" : BACKDROP
+          }
+        />
+      )}
       <div
         {...rest}
         ref={(el) => {

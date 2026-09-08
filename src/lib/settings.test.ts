@@ -3,27 +3,45 @@ import {
   COMPOSER_RUNNER_DEFAULT,
   DIFF_VIEWER_DEFAULT,
   FOLLOW_UP_BEHAVIOR_DEFAULT,
-  GRID_ARCADE_ENABLED_DEFAULT,
   KEYBINDINGS,
   LIVE_AGENTS_ENABLED_DEFAULT,
   loadComposerRunner,
   loadDiffViewer,
   loadFollowUpBehavior,
-  loadGridArcadeEnabled,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
+  loadSessionBackground,
+  loadSessionBackgroundImage,
+  loadSessionBackgroundEmptyOpacity,
+  loadSessionBackgroundChatOpacity,
+  loadSessionBackgroundPersist,
   NOTES_ENABLED_DEFAULT,
   saveComposerRunner,
   saveDiffViewer,
   saveFollowUpBehavior,
-  saveGridArcadeEnabled,
   saveLiveAgentsEnabled,
   saveNotesEnabled,
+  saveSessionBackground,
+  saveSessionBackgroundImage,
+  saveSessionBackgroundEmptyOpacity,
+  saveSessionBackgroundChatOpacity,
+  saveSessionBackgroundPersist,
+  sessionBackgroundVisible,
+  SESSION_BACKGROUND_DEFAULT,
+  SESSION_BACKGROUND_EMPTY_OPACITY_DEFAULT,
+  SESSION_BACKGROUND_OPACITY_DEFAULT,
+  SESSION_BACKGROUND_PERSIST_DEFAULT,
 } from "./settings";
 
 const KEY = "monocode.composerRunner";
 const NOTES_KEY = "monocode.notesEnabled";
 const LIVE_AGENTS_KEY = "monocode.liveAgentsEnabled";
+const SESSION_BACKGROUND_KEY = "monocode.sessionBackground";
+const SESSION_BACKGROUND_IMAGE_KEY = "monocode.sessionBackgroundImage";
+const SESSION_BACKGROUND_PERSIST_KEY = "monocode.sessionBackgroundPersist";
+const SESSION_BACKGROUND_OPACITY_KEY = "monocode.sessionBackgroundOpacity";
+const SESSION_BACKGROUND_EMPTY_OPACITY_KEY =
+  "monocode.sessionBackgroundEmptyOpacity";
 const GRID_ARCADE_KEY = "monocode.gridArcadeEnabled";
 const DIFF_VIEWER_KEY = "monocode.diffViewer";
 const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
@@ -134,23 +152,73 @@ describe("live agents enabled setting", () => {
   });
 });
 
-describe("grid arcade enabled setting", () => {
+describe("session background setting", () => {
   beforeEach(mockLocalStorage);
   afterEach(() => {
+    localStorage.removeItem(SESSION_BACKGROUND_KEY);
+    localStorage.removeItem(SESSION_BACKGROUND_IMAGE_KEY);
+    localStorage.removeItem(SESSION_BACKGROUND_PERSIST_KEY);
+    localStorage.removeItem(SESSION_BACKGROUND_OPACITY_KEY);
+    localStorage.removeItem(SESSION_BACKGROUND_EMPTY_OPACITY_KEY);
     localStorage.removeItem(GRID_ARCADE_KEY);
   });
 
-  it("defaults to on", () => {
-    expect(GRID_ARCADE_ENABLED_DEFAULT).toBe(true);
-    expect(loadGridArcadeEnabled()).toBe(true);
+  it("defaults to arcade", () => {
+    expect(SESSION_BACKGROUND_DEFAULT).toBe("arcade");
+    expect(loadSessionBackground()).toBe("arcade");
   });
 
-  it("persists an off switch", () => {
-    saveGridArcadeEnabled(false);
-    expect(localStorage.getItem(GRID_ARCADE_KEY)).toBe("0");
-    expect(loadGridArcadeEnabled()).toBe(false);
-    saveGridArcadeEnabled(true);
-    expect(loadGridArcadeEnabled()).toBe(true);
+  it("persists each background mode", () => {
+    saveSessionBackground("none");
+    expect(localStorage.getItem(SESSION_BACKGROUND_KEY)).toBe("none");
+    expect(loadSessionBackground()).toBe("none");
+    saveSessionBackground("grid");
+    expect(loadSessionBackground()).toBe("grid");
+    saveSessionBackground("image");
+    expect(loadSessionBackground()).toBe("image");
+  });
+
+  it("migrates the legacy empty-session games toggle", () => {
+    localStorage.setItem(GRID_ARCADE_KEY, "0");
+    expect(loadSessionBackground()).toBe("none");
+    localStorage.setItem(GRID_ARCADE_KEY, "1");
+    expect(loadSessionBackground()).toBe("arcade");
+  });
+
+  it("persists a custom image path", () => {
+    saveSessionBackgroundImage("/tmp/wallpaper.png");
+    expect(loadSessionBackgroundImage()).toBe("/tmp/wallpaper.png");
+    saveSessionBackgroundImage(null);
+    expect(loadSessionBackgroundImage()).toBeNull();
+  });
+
+  it("defaults persist to off and both intensities to full", () => {
+    expect(SESSION_BACKGROUND_PERSIST_DEFAULT).toBe(false);
+    expect(SESSION_BACKGROUND_OPACITY_DEFAULT).toBe(100);
+    expect(SESSION_BACKGROUND_EMPTY_OPACITY_DEFAULT).toBe(100);
+    expect(loadSessionBackgroundPersist()).toBe(false);
+    expect(loadSessionBackgroundEmptyOpacity()).toBe(100);
+    expect(loadSessionBackgroundChatOpacity()).toBe(100);
+  });
+
+  it("persists prompt and chat intensities separately", () => {
+    saveSessionBackgroundPersist(true);
+    expect(loadSessionBackgroundPersist()).toBe(true);
+    saveSessionBackgroundEmptyOpacity(85);
+    saveSessionBackgroundChatOpacity(45);
+    expect(localStorage.getItem(SESSION_BACKGROUND_EMPTY_OPACITY_KEY)).toBe(
+      "85",
+    );
+    expect(localStorage.getItem(SESSION_BACKGROUND_OPACITY_KEY)).toBe("45");
+    expect(loadSessionBackgroundEmptyOpacity()).toBe(85);
+    expect(loadSessionBackgroundChatOpacity()).toBe(45);
+  });
+
+  it("decides when a session pane should show the background", () => {
+    expect(sessionBackgroundVisible("none", true, true)).toBe(false);
+    expect(sessionBackgroundVisible("grid", false, true)).toBe(true);
+    expect(sessionBackgroundVisible("grid", false, false)).toBe(false);
+    expect(sessionBackgroundVisible("image", true, false)).toBe(true);
   });
 });
 

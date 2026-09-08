@@ -12,9 +12,12 @@ import {
   type RuntimeMode,
 } from "../lib/session";
 import { Popover } from "./Popover";
+import { composerChipClass, composerChipMutedClass } from "./composerChip";
 
 type Props = {
   value: RuntimeMode;
+  /** Match empty-session composer elevation for readable chips and menus. */
+  elevated?: string;
   onChange: (mode: RuntimeMode) => void;
   onClose?: () => void;
 };
@@ -28,7 +31,7 @@ const ICONS: Record<RuntimeMode, typeof Lock> = {
   "full-access": LockOpen,
 };
 
-export function AccessPicker({ value, onChange, onClose }: Props) {
+export function AccessPicker({ value, elevated, onChange, onClose }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(() =>
     Math.max(0, RUNTIME_MODES.indexOf(value)),
@@ -87,18 +90,14 @@ export function AccessPicker({ value, onChange, onClose }: Props) {
           }
           setOpen(true);
         }}
-        className={`flex h-6.5 max-w-52 items-center gap-1 rounded-md px-1.5 ${
-          open
-            ? "bg-content/10 text-content"
-            : "bg-content/10 text-content hover:bg-content/15"
-        }`}
+        className={`flex h-6.5 max-w-52 items-center gap-1 rounded-md px-1.5 ${composerChipClass(elevated, open)}`}
       >
         <Icon className="size-3.5 shrink-0" strokeWidth={1.75} />
         <span className="min-w-0 truncate text-[11px]">
           {RUNTIME_MODE_LABEL[value]}
         </span>
         <ChevronDown
-          className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
+          className={`size-3 shrink-0 ${composerChipMutedClass(elevated)} ${open ? "rotate-180" : ""}`}
           strokeWidth={1.75}
         />
       </button>
@@ -108,13 +107,14 @@ export function AccessPicker({ value, onChange, onClose }: Props) {
           side="top"
           width={MENU_WIDTH}
           autoFocus
+          elevated={elevated}
           onDismiss={(reason) => dismiss(reason === "escape")}
           role="listbox"
           aria-label="Access"
           data-access-picker
           tabIndex={-1}
           onKeyDown={onMenuKey}
-          className="p-1"
+          className={`p-1${elevated ? " session-composer-popover" : ""}`}
         >
           {RUNTIME_MODES.map((mode, index) => {
             const ModeIcon = ICONS[mode];
