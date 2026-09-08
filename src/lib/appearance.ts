@@ -18,6 +18,7 @@ const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
 const CHAT_BACKGROUND_CHAT_OPACITY_KEY = "monocode.chatBackgroundChatOpacity";
 const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
 let chatBackgroundRevision = Date.now();
+let nativeGlassReady = false;
 
 export const CHAT_BACKGROUND_PATH_CHANGE_EVENT =
   "monocode:chat-background-path-change";
@@ -226,10 +227,21 @@ export function isLightScheme(): boolean {
 export function applyThemePreference(value: ThemePreference): ColorScheme {
   const next = resolveColorScheme(value);
   document.documentElement.classList.toggle("theme-light", next === "light");
+  if (nativeGlassReady) syncNativeGlass(next);
   window.dispatchEvent(
     new CustomEvent<ColorScheme>(SCHEME_CHANGE_EVENT, { detail: next }),
   );
   return next;
+}
+
+function syncNativeGlass(scheme: ColorScheme) {
+  void invoke("set_window_glass_enabled", { enabled: scheme === "dark" });
+}
+
+/** Applies native transparency once the opaque launch cover can be removed. */
+export function activateWindowAppearance() {
+  nativeGlassReady = true;
+  syncNativeGlass(isLightScheme() ? "light" : "dark");
 }
 
 /** Keeps the "system" preference in sync when the OS flips appearance. */
