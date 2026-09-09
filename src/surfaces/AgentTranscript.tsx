@@ -5,6 +5,7 @@ import {
   Copy,
   FilePlusCorner,
   Minus,
+  Pencil,
   Bot,
   PenLine,
   Search,
@@ -115,6 +116,7 @@ type Props = {
   onBuildPlan?: (blockId: string, target?: PlanBuildTarget) => void;
   onSecondOpinion?: (harness: HarnessId, turn: Block[], model: string) => void;
   onHandoff?: (harness: HarnessId, turn: Block[], model: string) => void;
+  onEditLastTurn?: () => void;
   onJumpToBottomChange?: (show: boolean) => void;
   onJumpToBottomReady?: (jump: () => void) => void;
   /** Passes a function that renders the turn that holds a block. The render completes before the function returns. */
@@ -139,6 +141,7 @@ function AgentTranscriptComponent({
   onBuildPlan,
   onSecondOpinion,
   onHandoff,
+  onEditLastTurn,
   onJumpToBottomChange,
   onJumpToBottomReady,
   onRevealReady,
@@ -467,6 +470,14 @@ function AgentTranscriptComponent({
                 planHarness={harness}
                 planModel={model}
                 cwd={cwd}
+                onEditLastTurn={
+                  onEditLastTurn &&
+                  isLastTurn &&
+                  settled &&
+                  item.block.role === "user"
+                    ? onEditLastTurn
+                    : undefined
+                }
               />
             );
           const foldLineRow = (
@@ -799,6 +810,7 @@ const TranscriptBlock = memo(function TranscriptBlock({
   planBusy,
   planHarness,
   planModel,
+  onEditLastTurn,
 }: {
   block: Block;
   layout: TranscriptLayout;
@@ -814,6 +826,7 @@ const TranscriptBlock = memo(function TranscriptBlock({
   planBusy?: boolean;
   planHarness?: HarnessId;
   planModel?: string;
+  onEditLastTurn?: () => void;
 }) {
   if (block.role === "user") {
     return (
@@ -821,6 +834,7 @@ const TranscriptBlock = memo(function TranscriptBlock({
         block={block}
         layout={layout}
         stickyIndex={stickyIndex}
+        onEdit={onEditLastTurn}
       />
     );
   }
@@ -927,10 +941,12 @@ function UserMessageBlock({
   block,
   layout,
   stickyIndex,
+  onEdit,
 }: {
   block: Block;
   layout: TranscriptLayout;
   stickyIndex: number;
+  onEdit?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
@@ -990,12 +1006,12 @@ function UserMessageBlock({
   return (
     <div
       data-prompt-anchor={block.id}
-      className={
+      className={`group/usermsg ${
         chat ? "flex justify-end pt-1.5 pr-4 pb-4 pl-14" : "p-1.5 pb-3"
-      }
+      }`}
     >
       <div
-        className={`min-w-0 bg-content/10 px-3 py-2 font-sans text-content ${
+        className={`relative min-w-0 bg-content/10 px-3 py-2 font-sans text-content ${
           chat
             ? `w-fit max-w-xl ${singleLine ? "rounded-full" : "rounded-xl"}`
             : "rounded-lg border border-content/10"
@@ -1003,6 +1019,20 @@ function UserMessageBlock({
         style={{ zIndex: stickyIndex }}
         onClick={overflows ? toggle : undefined}
       >
+        {onEdit ? (
+          <button
+            type="button"
+            title="Edit and resend"
+            aria-label="Edit and resend"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            className="absolute -left-8 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-content/35 opacity-0 transition-opacity hover:bg-content/10 hover:text-content/70 group-hover/usermsg:opacity-100"
+          >
+            <Pencil className="size-3.5" strokeWidth={1.75} />
+          </button>
+        ) : null}
         {block.attachments?.length ? (
           <div
             className={`flex flex-wrap gap-1.5 ${text || card || note ? "mb-2" : ""}`}

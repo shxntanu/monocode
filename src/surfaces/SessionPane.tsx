@@ -46,6 +46,7 @@ import { resolveModel } from "../lib/models";
 import { isAstraModel } from "../lib/astraWelcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { projectKey } from "../lib/paths";
+import { canEditLastTurn, lastTurnRecall } from "../lib/editLastTurn";
 import {
   loadProjectChatBackground,
   projectChatBackgroundRevision,
@@ -174,6 +175,9 @@ export const SessionPane = memo(function SessionPane({
   onPaneDragStart,
 }: Props) {
   const title = sessionDisplayTitle(session.title, session.harness);
+  const recallLastTurnRef = useRef<(() => void) | null>(null);
+  const editLastTurnSupported = canEditLastTurn(session);
+  const turnRecall = editLastTurnSupported ? lastTurnRecall(session) : null;
   const backgroundRevision = useSyncExternalStore(
     subscribeProjectChatBackground,
     projectChatBackgroundRevision,
@@ -366,6 +370,11 @@ export const SessionPane = memo(function SessionPane({
       onResumeQueue={() => onResumeQueue(session.id)}
       onOpenFile={onOpenFile}
       busy={!!session.busy}
+      editLastTurnSupported={editLastTurnSupported}
+      lastTurnRecall={turnRecall}
+      onRecallLastTurnReady={(recall) => {
+        recallLastTurnRef.current = recall;
+      }}
     >
       {session.inboxAsk ? null : (
         <SessionReview
@@ -488,6 +497,14 @@ export const SessionPane = memo(function SessionPane({
               onJumpToBottomChange={setShowJumpToBottom}
               onJumpToBottomReady={onJumpToBottomReady}
               onRevealReady={onRevealReady}
+              onEditLastTurn={
+                editLastTurnSupported
+                  ? () => {
+                      onFocus(session.id);
+                      recallLastTurnRef.current?.();
+                    }
+                  : undefined
+              }
             />
             <PromptOutline
               blocks={session.blocks}

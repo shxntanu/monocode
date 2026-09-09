@@ -123,6 +123,7 @@ import { Popover } from "./Popover";
 import { consumePlanCommand, PLAN_COMMAND } from "../lib/plan";
 import { COMPACT_COMMAND, isCompactCommand } from "../lib/compact";
 import { useComposerBackgroundElevated } from "../hooks/useComposerBackgroundElevated";
+import type { LastTurnRecall } from "../lib/editLastTurn";
 
 type Props = {
   enabled?: boolean;
@@ -151,6 +152,8 @@ type Props = {
   handoffCard?: HandoffComposerCard;
   question?: UserQuestionPrompt;
   busy?: boolean;
+  editLastTurnSupported?: boolean;
+  lastTurnRecall?: LastTurnRecall | null;
   queuedMessages?: QueuedMessage[];
   queueStatus?: MessageQueueStatus;
   hotkeys?: boolean;
@@ -169,7 +172,7 @@ type Props = {
   onSubmit: (
     text: string,
     attachments: Attachment[],
-    options?: { intent?: TurnIntent },
+    options?: { intent?: TurnIntent; resendEdited?: boolean },
   ) => void;
   onStop?: () => void;
   onCompactContext?: () => boolean;
@@ -180,6 +183,7 @@ type Props = {
   onResumeQueue?: () => void;
   onOpenFile?: (path: string) => void;
   onDraftChange?: (text: string) => void;
+  onRecallLastTurnReady?: (recall: () => void) => void;
   children?: ReactNode;
 };
 
@@ -407,6 +411,8 @@ export function Composer({
   handoffCard,
   question,
   busy = false,
+  editLastTurnSupported = false,
+  lastTurnRecall = null,
   queuedMessages = [],
   queueStatus,
   onFocus,
@@ -431,6 +437,7 @@ export function Composer({
   onResumeQueue,
   onOpenFile,
   onDraftChange,
+  onRecallLastTurnReady,
   children,
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -469,6 +476,7 @@ export function Composer({
   const [notes, setNotes] = useState<Note[]>(() => peekNotes() ?? []);
   const [mention, setMention] = useState<MentionToken | null>(null);
   const [mentionActive, setMentionActive] = useState(0);
+  const [resendEdited, setResendEdited] = useState(false);
   const [runnerEnabled, setRunnerEnabled] = useState(loadComposerRunner);
   const [runnerLive, setRunnerLive] = useState(
     () => busy && loadComposerRunner(),
@@ -906,6 +914,27 @@ export function Composer({
     };
   }, [addAttachments, attachmentsSupported, enabled]);
 
+  const recallLastTurn = useCallback(() => {
+    if (!editLastTurnSupported || !lastTurnRecall) return;
+    const text = lastTurnRecall.text;
+    setDraft(text);
+    onDraftChange?.(text);
+    if (ref.current) {
+      ref.current.value = text;
+      ref.current.style.height = "auto";
+      ref.current.style.height = `${Math.min(ref.current.scrollHeight, 240)}px`;
+    }
+    setAttachments(lastTurnRecall.attachments);
+    syncHasValue(text, lastTurnRecall.attachments);
+    setResendEdited(true);
+    ref.current?.focus();
+  }, [editLastTurnSupported, lastTurnRecall, onDraftChange]);
+
+  useEffect(() => {
+    if (!editLastTurnSupported || !onRecallLastTurnReady) return;
+    onRecallLastTurnReady(recallLastTurn);
+  }, [editLastTurnSupported, onRecallLastTurnReady, recallLastTurn]);
+
   const submit = (value: string) => {
     if (isCompactCommand(value)) {
       if (!onCompactContext?.()) return;
@@ -931,6 +960,7 @@ export function Composer({
     if (!text && files.length === 0 && !noteCard && !handoffCard) return;
     onSubmit(text, files, {
       intent: planSelected || command.planning ? "plan" : "default",
+      ...(resendEdited ? { resendEdited: true } : {}),
     });
     if (!ref.current) return;
     ref.current.value = "";
@@ -938,6 +968,7 @@ export function Composer({
     setDraft("");
     onDraftChange?.("");
     setAttachments([]);
+    setResendEdited(false);
     setPlanSelected(false);
     setPlusOpen(false);
     setSlash(null);
@@ -1037,6 +1068,18 @@ export function Composer({
         }
         setSlash(null);
       }
+    }
+
+    if (
+      e.key === "ArrowUp" &&
+      editLastTurnSupported &&
+      navigationEmpty &&
+      e.currentTarget.selectionStart === 0 &&
+      e.currentTarget.selectionEnd === 0
+    ) {
+      e.preventDefault();
+      recallLastTurn();
+      return;
     }
 
     if (e.key === "Enter" && !e.shiftKey) {
