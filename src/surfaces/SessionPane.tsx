@@ -453,7 +453,6 @@ export const SessionPane = memo(function SessionPane({
               hasChatBackground={Boolean(
                 projectBackground || globalBackgroundPath,
               )}
-              composerElevated={composerElevated}
               composer={dockComposer ? undefined : composer}
             />
           )

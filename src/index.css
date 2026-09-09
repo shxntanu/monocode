@@ -296,18 +296,6 @@ html.theme-light [data-composer-elevated="image-light"] {
   -webkit-text-fill-color: var(--session-composer-muted);
 }
 
-[data-composer-elevated^="image"] .session-empty-title {
-  display: inline-block;
-  max-width: 100%;
-  padding: 0.35rem 0.65rem;
-  border-radius: 0.5rem;
-  background: var(--session-composer-bg, color-mix(in srgb, #07080a 94%, transparent));
-  border: 1px solid var(--session-composer-border, color-mix(in srgb, #ffffff 14%, transparent));
-  color: var(--session-composer-text, hsl(var(--theme-hue) var(--theme-saturation) 94%));
-  backdrop-filter: blur(16px);
-  box-shadow: 0 6px 24px color-mix(in srgb, black 32%, transparent);
-}
-
 .transcript-turn {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 240px;
