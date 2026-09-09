@@ -29,7 +29,11 @@ import {
   saveSidebarTabOrder,
   type SidebarTabId,
 } from "../lib/appearance";
-import { basename, type GitHistoryCommit } from "../lib/fs";
+import {
+  basename,
+  type GitFileDiffKind,
+  type GitHistoryCommit,
+} from "../lib/fs";
 import { IS_MAC, MOD } from "../lib/platform";
 import { resolveModel } from "../lib/models";
 import { prettyParent, projectKey, projectName } from "../lib/paths";
@@ -202,9 +206,11 @@ type Props = {
   canGoForward?: boolean;
   onGoBack?: () => void;
   onGoForward?: () => void;
-  onOpenDiff?: (path: string) => void;
+  onOpenDiff?: (path: string, kind?: GitFileDiffKind) => void;
+  onOpenAllChanges?: () => void;
   onOpenCommit?: (commit: GitHistoryCommit) => void;
   selectedDiffPath?: string;
+  selectedDiffKind?: GitFileDiffKind;
   selectedCommitSha?: string;
   textHarness?: HarnessId;
   onShowSourceControl?: () => void;
@@ -275,8 +281,10 @@ function SidebarComponent({
   onGoBack,
   onGoForward,
   onOpenDiff,
+  onOpenAllChanges,
   onOpenCommit,
   selectedDiffPath,
+  selectedDiffKind,
   selectedCommitSha,
   textHarness,
   onShowSourceControl,
@@ -1399,8 +1407,10 @@ function SidebarComponent({
               enabled={open}
               textHarness={textHarness}
               selectedPath={selectedDiffPath}
+              selectedKind={selectedDiffKind}
               selectedSha={selectedCommitSha}
               onOpenFile={onOpenDiff ?? onOpenFile}
+              onOpenAllChanges={onOpenAllChanges ?? (() => {})}
               onOpenCommit={onOpenCommit ?? (() => {})}
             />
           </div>

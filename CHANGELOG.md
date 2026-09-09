@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.40] - 2026-09-08
+
+### Added
+
+- Working-tree reviews now separate staged changes against `HEAD` from unstaged changes against the index, including partially staged files.
+- The Changes panel can organize files into a collapsible directory tree, remembers the selected list or tree view, and can open every change in one review.
+
+### Fixed
+
+- Code block syntax highlighting follows MonoCode's appearance preference instead of the system color scheme. In #117 by @kartava.
+- Split conversation panes share one continuous chat background instead of repeating the image in every pane.
+- Project search safely treats include filters beginning with `-` as path patterns instead of Git options. In #125 by @Karajelly.
+- Release publishing validates and uploads the expected versioned artifacts for every supported platform.
+
 ## [0.1.39] - 2026-09-08
 
 ### Added
