@@ -18,10 +18,10 @@ export type HarnessEvent =
       modelSettings?: Record<string, string>;
     }
   | { type: "status"; text: string }
-  | { type: "message.delta"; text: string }
-  | { type: "message.completed" }
-  | { type: "reasoning.delta"; text: string }
-  | { type: "reasoning.completed" }
+  | { type: "message.delta"; text: string; subagentCallId?: string }
+  | { type: "message.completed"; subagentCallId?: string }
+  | { type: "reasoning.delta"; text: string; subagentCallId?: string }
+  | { type: "reasoning.completed"; subagentCallId?: string }
   | {
       type: "tool.started";
       callId: string;
@@ -31,6 +31,10 @@ export type HarnessEvent =
       preview?: ToolPreview;
       /** Every path affected when one structured edit changes multiple files. */
       paths?: string[];
+      /** Codex: child thread id for a spawned subagent. */
+      agentThreadId?: string;
+      /** Apply this event to a parent session's nested subagent transcript. */
+      subagentCallId?: string;
     }
   | {
       type: "tool.updated";
@@ -42,6 +46,7 @@ export type HarnessEvent =
       preview?: ToolPreview;
       /** Every path affected when one structured edit changes multiple files. */
       paths?: string[];
+      subagentCallId?: string;
     }
   | {
       type: "approval.requested";

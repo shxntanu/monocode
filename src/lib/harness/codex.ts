@@ -12,9 +12,11 @@ import {
   buildThreadStartParams,
   buildTurnStartParams,
   buildTurnSteerParams,
+  codexAgentThreadId,
   isRecoverableThreadResumeError,
   mapApprovalRequest,
   mapCodexNotification,
+  stringField,
   toCodexApprovalDecision,
   type CodexApprovalKind,
 } from "./codexProtocol";
@@ -57,6 +59,8 @@ type Live = {
   turnEndPending: boolean;
   emittedAssistant: string;
   emittedReasoning: string;
+  /** Codex child thread id → parent subagent tool call id. */
+  subagentThreads: Map<string, string>;
 };
 
 type Resume = {
@@ -384,6 +388,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
       turnEndPending: false,
       emittedAssistant: "",
       emittedReasoning: "",
+      subagentThreads: new Map(),
     };
     liveRef.current = live;
     liveByThread.set(input.sessionId, live);
@@ -493,16 +498,29 @@ function handleNotification(live: Live, method: string, params: unknown): void {
   // UI uses for busy / stop / "Working for".
   const mapped = mapCodexNotification(method, params);
   const snapshot = method === "item/completed";
+  registerCodexSubagentThreads(live, params, mapped.events);
+  const subagentCallId = mapped.agentThreadId
+    ? live.subagentThreads.get(mapped.agentThreadId)
+    : undefined;
   for (const event of mapped.events) {
-    if (event.type === "message.delta") {
-      publishCodexText(live, "assistant", event.text, snapshot);
+    const scoped = scopeCodexEvent(event, subagentCallId);
+    if (scoped.type === "message.delta") {
+      if (!scoped.subagentCallId) {
+        publishCodexText(live, "assistant", scoped.text, snapshot);
+        continue;
+      }
+      live.onEvent(scoped);
       continue;
     }
-    if (event.type === "reasoning.delta") {
-      publishCodexText(live, "reasoning", event.text, snapshot);
+    if (scoped.type === "reasoning.delta") {
+      if (!scoped.subagentCallId) {
+        publishCodexText(live, "reasoning", scoped.text, snapshot);
+        continue;
+      }
+      live.onEvent(scoped);
       continue;
     }
-    live.onEvent(event);
+    live.onEvent(scoped);
   }
   if (mapped.activeTurnId !== undefined) {
     live.activeTurnId = mapped.activeTurnId;
@@ -510,6 +528,35 @@ function handleNotification(live: Live, method: string, params: unknown): void {
   if (mapped.turnCompleted) {
     finishActiveTurn(live);
   }
+}
+
+function registerCodexSubagentThreads(
+  live: Live,
+  params: unknown,
+  events: HarnessEvent[],
+): void {
+  const item = asRecord(asRecord(params)?.item);
+  const threadId = codexAgentThreadId(item);
+  if (!item || stringField(item, "type") !== "subAgentActivity" || !threadId) {
+    return;
+  }
+  for (const event of events) {
+    if (event.type !== "tool.started" && event.type !== "tool.updated") continue;
+    if (event.kind !== "agent" || !event.callId) continue;
+    live.subagentThreads.set(threadId, event.callId);
+    if (event.status === "failed" || event.status === "completed") {
+      live.subagentThreads.delete(threadId);
+    }
+    return;
+  }
+}
+
+function scopeCodexEvent(
+  event: HarnessEvent,
+  subagentCallId?: string,
+): HarnessEvent {
+  if (!subagentCallId) return event;
+  return { ...event, subagentCallId };
 }
 
 function publishCodexText(

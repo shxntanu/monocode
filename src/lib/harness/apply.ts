@@ -17,12 +17,26 @@ import {
 import { joinStreamText } from "./streamText";
 import { taskListText } from "../taskList";
 import { isReviewablePlan } from "../plan";
+import {
+  ensureSubagentTranscript,
+  patchSubagentTranscript,
+} from "../subagents";
 import type { HarnessEvent } from "./types";
+
+function subagentScope(event: HarnessEvent): string | undefined {
+  if (!("subagentCallId" in event)) return undefined;
+  const callId = event.subagentCallId?.trim();
+  return callId || undefined;
+}
 
 export function applyHarnessEvent(
   session: Session,
   event: HarnessEvent,
 ): Session {
+  const scopedCallId = subagentScope(event);
+  if (scopedCallId) {
+    return applySubagentHarnessEvent(session, scopedCallId, event);
+  }
   switch (event.type) {
     case "message.delta":
       return patchStreaming(session, "assistant", event.text, true);
@@ -32,8 +46,8 @@ export function applyHarnessEvent(
       return patchStreaming(session, "reasoning", event.text, true);
     case "reasoning.completed":
       return finishRole(session, "reasoning");
-    case "tool.started":
-      return upsertTool(session, {
+    case "tool.started": {
+      let next = upsertTool(session, {
         callId: event.callId,
         title: event.title,
         kind: event.kind,
@@ -41,6 +55,11 @@ export function applyHarnessEvent(
         preview: event.preview,
         streaming: true,
       });
+      if (event.agentThreadId) {
+        next = registerSubagentThread(next, event.callId, event.agentThreadId);
+      }
+      return next;
+    }
     case "tool.updated":
       return upsertTool(session, {
         callId: event.callId,
@@ -579,6 +598,57 @@ function normalizeLabel(value: string): string {
     .toLowerCase();
 }
 
+function registerSubagentThread(
+  session: Session,
+  callId: string,
+  agentThreadId: string,
+): Session {
+  const index = session.blocks.findIndex(
+    (block) => block.tool?.callId === callId,
+  );
+  if (index < 0) return session;
+  const block = session.blocks[index];
+  if (!block.tool) return session;
+  const transcript = ensureSubagentTranscript(block, agentThreadId);
+  if (
+    block.tool.subagent?.agentThreadId === transcript.agentThreadId &&
+    block.tool.subagent?.blocks === transcript.blocks
+  ) {
+    return session;
+  }
+  const blocks = session.blocks.slice();
+  blocks[index] = {
+    ...block,
+    tool: {
+      ...block.tool,
+      subagent: transcript,
+    },
+  };
+  return { ...session, blocks };
+}
+
+function applySubagentHarnessEvent(
+  session: Session,
+  parentCallId: string,
+  event: HarnessEvent,
+): Session {
+  const parent = session.blocks.find(
+    (block) => block.tool?.callId === parentCallId,
+  );
+  if (!parent?.tool) return session;
+  const transcript = ensureSubagentTranscript(parent);
+  const nested = { ...session, blocks: transcript.blocks };
+  const { subagentCallId: _drop, ...base } = event as HarnessEvent & {
+    subagentCallId?: string;
+  };
+  const updated = applyHarnessEvent(nested, base as HarnessEvent);
+  if (updated.blocks === transcript.blocks) return session;
+  return patchSubagentTranscript(session, parentCallId, {
+    ...transcript,
+    blocks: updated.blocks,
+  });
+}
+
 function upsertTool(
   session: Session,
   patch: {
@@ -613,6 +683,7 @@ function upsertTool(
         status: patch.status,
         ...(detail ? { detail } : {}),
         ...(preview ? { preview } : {}),
+        ...(patch.kind === "agent" ? { subagent: { blocks: [] } } : {}),
       },
     });
   }
@@ -655,6 +726,7 @@ function upsertTool(
       status,
       ...(detail ? { detail } : {}),
       ...(preview ? { preview } : {}),
+      ...(prev.tool?.subagent ? { subagent: prev.tool.subagent } : {}),
     },
   };
   return { ...session, blocks };

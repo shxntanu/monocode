@@ -201,6 +201,8 @@ export function toCodexApprovalDecision(
 
 export type MappedCodexNotification = {
   events: HarnessEvent[];
+  /** When set, route events into the matching subagent transcript. */
+  agentThreadId?: string;
   /** When set, the active turn finished. */
   turnCompleted?: {
     status: "completed" | "failed" | "interrupted" | "cancelled";
@@ -208,6 +210,15 @@ export type MappedCodexNotification = {
   };
   activeTurnId?: string | null;
 };
+
+export function codexAgentThreadId(
+  rec: Record<string, unknown> | null | undefined,
+): string | undefined {
+  if (!rec) return undefined;
+  return (
+    stringField(rec, "agentThreadId") ?? stringField(rec, "agent_thread_id")
+  );
+}
 
 /**
  * Translate a Codex app-server notification into MonoCode HarnessEvents.
@@ -223,19 +234,31 @@ export function mapCodexNotification(
   if (method === "item/agentMessage/delta") {
     const delta = streamTextDelta(rec.delta);
     if (!delta) return { events: [] };
-    return { events: [{ type: "message.delta", text: delta }] };
+    const agentThreadId = codexAgentThreadId(rec);
+    return {
+      events: [{ type: "message.delta", text: delta }],
+      ...(agentThreadId ? { agentThreadId } : {}),
+    };
   }
 
   if (method === "item/reasoning/summaryTextDelta") {
     const delta = streamTextDelta(rec.delta);
     if (!delta) return { events: [] };
-    return { events: [{ type: "reasoning.delta", text: delta }] };
+    const agentThreadId = codexAgentThreadId(rec);
+    return {
+      events: [{ type: "reasoning.delta", text: delta }],
+      ...(agentThreadId ? { agentThreadId } : {}),
+    };
   }
 
   if (method === "item/reasoning/textDelta") {
     const delta = streamTextDelta(rec.delta);
     if (!delta) return { events: [] };
-    return { events: [{ type: "reasoning.delta", text: delta }] };
+    const agentThreadId = codexAgentThreadId(rec);
+    return {
+      events: [{ type: "reasoning.delta", text: delta }],
+      ...(agentThreadId ? { agentThreadId } : {}),
+    };
   }
 
   if (method === "item/plan/delta") {
@@ -290,6 +313,7 @@ export function mapCodexNotification(
     const itemId = stringField(rec, "itemId") ?? "";
     const delta = streamTextDelta(rec.delta);
     if (!itemId || !delta) return { events: [] };
+    const agentThreadId = codexAgentThreadId(rec);
     return {
       events: [
         {
@@ -300,6 +324,7 @@ export function mapCodexNotification(
           status: "in_progress",
         },
       ],
+      ...(agentThreadId ? { agentThreadId } : {}),
     };
   }
 
@@ -439,6 +464,9 @@ function mapItemLifecycle(
     return { events: [] };
   }
 
+  const routeThreadId =
+    itemType === "subAgentActivity" ? undefined : codexAgentThreadId(item);
+
   if (itemType === "agentMessage") {
     // Prefer deltas; completed agent messages may carry full text for
     // non-streaming. A turn can still run after this item — Codex often
@@ -453,7 +481,10 @@ function mapItemLifecycle(
           { type: "message.completed" },
         );
       }
-      return { events };
+      return {
+        events,
+        ...(routeThreadId ? { agentThreadId: routeThreadId } : {}),
+      };
     }
     return { events: [] };
   }
@@ -476,10 +507,14 @@ function mapItemLifecycle(
               { type: "reasoning.delta", text },
               { type: "reasoning.completed" },
             ],
+            ...(routeThreadId ? { agentThreadId: routeThreadId } : {}),
           };
         }
       }
-      return { events: [{ type: "reasoning.completed" }] };
+      return {
+        events: [{ type: "reasoning.completed" }],
+        ...(routeThreadId ? { agentThreadId: routeThreadId } : {}),
+      };
     }
     return { events: [] };
   }
@@ -502,7 +537,12 @@ function mapItemLifecycle(
   }
 
   const mapped = mapToolItem(item, itemType, completed);
-  return mapped ? { events: [mapped] } : { events: [] };
+  return mapped
+    ? {
+        events: [mapped],
+        ...(routeThreadId ? { agentThreadId: routeThreadId } : {}),
+      }
+    : { events: [] };
 }
 
 function mapToolItem(
@@ -629,6 +669,7 @@ function mapSubAgentActivity(
     stringField(item, "agentPath") ?? stringField(item, "agent_path");
   const leaf = path?.split(/[/\\]/).filter(Boolean).pop();
   const title = leaf ? `${formatAgentType(leaf)} subagent` : "Subagent";
+  const agentThreadId = codexAgentThreadId(item);
   if (kind === "interrupted") {
     return {
       type: "tool.updated",
@@ -636,6 +677,17 @@ function mapSubAgentActivity(
       title,
       kind: "agent",
       status: "failed",
+      ...(agentThreadId ? { agentThreadId } : {}),
+    };
+  }
+  if (kind === "completed" || kind === "finished" || kind === "done") {
+    return {
+      type: "tool.updated",
+      callId,
+      title,
+      kind: "agent",
+      status: "completed",
+      ...(agentThreadId ? { agentThreadId } : {}),
     };
   }
   if (kind === "interacted") {
@@ -645,6 +697,7 @@ function mapSubAgentActivity(
       title,
       kind: "agent",
       status: "in_progress",
+      ...(agentThreadId ? { agentThreadId } : {}),
     };
   }
   // `started` items are completion-only in app-server v2: the spawn finished,
@@ -655,6 +708,7 @@ function mapSubAgentActivity(
     title,
     kind: "agent",
     status: "in_progress",
+    ...(agentThreadId ? { agentThreadId } : {}),
   };
 }
 

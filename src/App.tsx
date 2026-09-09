@@ -251,6 +251,10 @@ import {
   type Session,
   type TurnIntent,
 } from "./lib/session";
+import {
+  harnessSupportsSubagentViews,
+  listSubagentSummaries,
+} from "./lib/subagents";
 
 import {
   canDispatchQueuedHead,
@@ -619,6 +623,9 @@ export default function App({
   const [sidebarTab, setSidebarTab] = useState<SidebarTabId>(
     () => loadSidebarTabOrder()[0] ?? "sessions",
   );
+  const [selectedSubagentBySession, setSelectedSubagentBySession] = useState<
+    Record<string, string>
+  >({});
   const [filesSearchOpen, setFilesSearchOpen] = useState(false);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [searchViewOpen, setSearchViewOpen] = useState(false);
@@ -5282,9 +5289,28 @@ export default function App({
     );
   }, [currentProjectDock, dockVisible]);
 
+  const onSelectSubagent = useCallback(
+    (sessionId: string, callId: string | null) => {
+      setSelectedSubagentBySession((prev) => {
+        const next = { ...prev };
+        if (callId) next[sessionId] = callId;
+        else delete next[sessionId];
+        return next;
+      });
+    },
+    [],
+  );
+
+  const activeSubagents = active ? listSubagentSummaries(active) : [];
+  const selectedSubagentCallId = active
+    ? (selectedSubagentBySession[active.id] ?? null)
+    : null;
+
   const sessionPaneProps = {
     recents,
     hideProjectPicker: true,
+    selectedSubagentBySession,
+    onSelectSubagent,
     onFocus: onFocusPane,
     onClose: onClosePane,
     onCwdChange,
@@ -5334,6 +5360,13 @@ export default function App({
         busySessionIds={busySessionIds}
         approvalSessionIds={approvalSessionIds}
         activeSessionId={active?.id}
+        activeSubagents={activeSubagents}
+        selectedSubagentCallId={selectedSubagentCallId}
+        onSelectSubagent={
+          active && harnessSupportsSubagentViews(active.harness)
+            ? (callId) => onSelectSubagent(active.id, callId)
+            : undefined
+        }
         status={historyFailed ? "error" : "idle"}
         pending={historyPending}
         onSelectSession={onSelectHistorySession}

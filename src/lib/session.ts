@@ -104,6 +104,13 @@ export type ToolPreviewLine = {
   text: string;
 };
 
+/** Read-only work captured while a subagent tool call is running. */
+export type SubagentTranscript = {
+  /** Provider thread id used to route live events (Codex agentThreadId). */
+  agentThreadId?: string;
+  blocks: Block[];
+};
+
 export type ToolPreview = {
   kind: ToolPreviewKind;
   title?: string;
@@ -161,6 +168,8 @@ export type Block = {
     status?: string;
     detail?: string;
     preview?: ToolPreview;
+    /** Nested transcript for a harness-spawned subagent (Codex subAgentActivity, etc.). */
+    subagent?: SubagentTranscript;
   };
   approval?: {
     requestId: number;

@@ -1,6 +1,7 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Archive,
+  Bot,
   Check,
   ChevronDown,
   ChevronRight,
@@ -91,6 +92,7 @@ import {
   type SessionSidebarFilters,
 } from "../lib/sessionFilters";
 import type { HarnessId, LinkedWorkItem } from "../lib/session";
+import type { SubagentSummary } from "../lib/subagents";
 import type { LiveAgent } from "../lib/liveAgents";
 import type { SessionSummary } from "../lib/sessionStore";
 import type { SettingsSectionId } from "../lib/settings";
@@ -172,6 +174,10 @@ type Props = {
   busySessionIds: Set<string>;
   approvalSessionIds: Set<string>;
   activeSessionId?: string;
+  /** Nested subagents for the active session (Codex Task/sub-agent work). */
+  activeSubagents?: SubagentSummary[];
+  selectedSubagentCallId?: string | null;
+  onSelectSubagent?: (callId: string | null) => void;
   /** Open tabs, including blank ones not yet in history. */
   openSessions?: readonly SessionSummary[];
   status: "idle" | "error";
@@ -256,6 +262,9 @@ function SidebarComponent({
   busySessionIds,
   approvalSessionIds,
   activeSessionId,
+  activeSubagents = [],
+  selectedSubagentCallId = null,
+  onSelectSubagent,
   openSessions = [],
   status,
   pending,
@@ -898,6 +907,29 @@ function SidebarComponent({
     onSelectSession(sessionId);
   };
 
+  const renderSessionSubagents = (sessionId: string) => {
+    if (
+      sessionId !== activeSessionId ||
+      activeSubagents.length === 0 ||
+      !onSelectSubagent
+    ) {
+      return null;
+    }
+    return (
+      <ul className="mt-0.5 flex flex-col gap-px border-l border-content/10 pl-2 ml-3.5">
+        {activeSubagents.map((subagent) => (
+          <li key={subagent.callId}>
+            <SubagentSidebarRow
+              subagent={subagent}
+              selected={selectedSubagentCallId === subagent.callId}
+              onSelect={() => onSelectSubagent(subagent.callId)}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   const renderSessionCard = (session: SessionSummary, compact = false) =>
     renamingSessionId === session.id && onRenameSession ? (
       <SessionRenameRow
@@ -912,35 +944,43 @@ function SidebarComponent({
         onCancel={() => setRenamingSessionId(null)}
       />
     ) : (
-      <SessionCard
-        session={session}
-        isActive={session.id === activeSessionId}
-        isSelected={selectedSessionIds.has(session.id)}
-        busy={busySessionIds.has(session.id)}
-        done={unseenFinishedIds.has(session.id)}
-        needsApproval={approvalSessionIds.has(session.id)}
-        dropTarget={isSessionDrop("session", session.id)}
-        compact={compact}
-        now={now}
-        onSelect={onSessionCardSelect}
-        onOpenWorkItem={onOpenInboxItem}
-        onPrefetch={onPrefetchSession}
-        onPlaceOnPane={onPlaceSessionOnPane}
-        onListDrop={onSessionListDrop}
-        onListDropTargetChange={setSessionDrop}
-        onContextMenu={(e) => onSessionContextMenu(session.id, e)}
-        onArchive={
-          onArchiveSession
-            ? () => onArchiveSession(session.id, !session.archived)
-            : undefined
-        }
-        onRename={
-          onRenameSession ? () => setRenamingSessionId(session.id) : undefined
-        }
-        onDelete={
-          onDeleteSession ? () => onDeleteSession(session.id) : undefined
-        }
-      />
+      <>
+        <SessionCard
+          session={session}
+          isActive={
+            session.id === activeSessionId && !selectedSubagentCallId
+          }
+          isSelected={selectedSessionIds.has(session.id)}
+          busy={busySessionIds.has(session.id)}
+          done={unseenFinishedIds.has(session.id)}
+          needsApproval={approvalSessionIds.has(session.id)}
+          dropTarget={isSessionDrop("session", session.id)}
+          compact={compact}
+          now={now}
+          onSelect={(sessionId, event) => {
+            onSelectSubagent?.(null);
+            onSessionCardSelect(sessionId, event);
+          }}
+          onOpenWorkItem={onOpenInboxItem}
+          onPrefetch={onPrefetchSession}
+          onPlaceOnPane={onPlaceSessionOnPane}
+          onListDrop={onSessionListDrop}
+          onListDropTargetChange={setSessionDrop}
+          onContextMenu={(e) => onSessionContextMenu(session.id, e)}
+          onArchive={
+            onArchiveSession
+              ? () => onArchiveSession(session.id, !session.archived)
+              : undefined
+          }
+          onRename={
+            onRenameSession ? () => setRenamingSessionId(session.id) : undefined
+          }
+          onDelete={
+            onDeleteSession ? () => onDeleteSession(session.id) : undefined
+          }
+        />
+        {renderSessionSubagents(session.id)}
+      </>
     );
 
   const onSessionFiltersChange = (next: SessionSidebarFilters) => {
@@ -2488,6 +2528,40 @@ function SessionCard({
         </button>
       ) : null}
     </div>
+  );
+}
+
+function SubagentSidebarRow({
+  subagent,
+  selected,
+  onSelect,
+}: {
+  subagent: SubagentSummary;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={subagent.title}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect();
+      }}
+      className={`flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left ${
+        selected
+          ? "bg-content/10 text-content"
+          : "text-content/70 hover:bg-content/5 hover:text-content"
+      }`}
+    >
+      <Bot className="size-3 shrink-0 text-content/45" strokeWidth={1.75} />
+      <span className="min-w-0 flex-1 truncate text-[12px] leading-snug">
+        {subagent.title}
+      </span>
+      {subagent.busy ? (
+        <TerminalSpinner className="inline-block w-3 shrink-0 select-none text-center text-[11px] leading-none text-accent" />
+      ) : null}
+    </button>
   );
 }
 

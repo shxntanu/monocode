@@ -223,6 +223,59 @@ describe("codex live turn sequence", () => {
     expect(settled).toBe(true);
   });
 
+  it("routes nested subagent traffic into scoped harness events", async () => {
+    const { events, turn } = await startTurn("codex-live");
+
+    notify("item/completed", {
+      item: {
+        id: "sa_1",
+        type: "subAgentActivity",
+        kind: "started",
+        agentPath: "/root/explore-auth",
+        agentThreadId: "thr_child",
+      },
+    });
+    notify("item/agentMessage/delta", {
+      delta: "Inspecting auth module",
+      agentThreadId: "thr_child",
+    });
+    notify("item/started", {
+      item: {
+        id: "cmd_child",
+        type: "commandExecution",
+        command: "rg auth",
+        status: "inProgress",
+        agentThreadId: "thr_child",
+      },
+    });
+
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "tool.started",
+          callId: "sa_1",
+          kind: "agent",
+          agentThreadId: "thr_child",
+        }),
+        expect.objectContaining({
+          type: "message.delta",
+          text: "Inspecting auth module",
+          subagentCallId: "sa_1",
+        }),
+        expect.objectContaining({
+          type: "tool.started",
+          callId: "cmd_child",
+          subagentCallId: "sa_1",
+        }),
+      ]),
+    );
+
+    notify("turn/completed", {
+      turn: { id: "turn_1", status: "completed" },
+    });
+    await turn;
+  });
+
   it("rolls back the last turn before resending an edited prompt", async () => {
     const { turn } = await startTurn("codex-live");
     notify("turn/completed", {

@@ -286,6 +286,65 @@ describe("mapCodexNotification", () => {
     });
   });
 
+  it("tags child-thread deltas with agentThreadId for subagent routing", () => {
+    const mapped = mapCodexNotification("item/agentMessage/delta", {
+      delta: "Checking auth routes",
+      agentThreadId: "thr_child",
+    });
+    expect(mapped.agentThreadId).toBe("thr_child");
+    expect(mapped.events[0]).toEqual({
+      type: "message.delta",
+      text: "Checking auth routes",
+    });
+  });
+
+  it("routes nested tool items by agentThreadId but not subAgentActivity rows", () => {
+    const command = mapCodexNotification("item/started", {
+      item: {
+        id: "cmd_child",
+        type: "commandExecution",
+        command: "rg auth",
+        status: "inProgress",
+        agentThreadId: "thr_child",
+      },
+    });
+    expect(command.agentThreadId).toBe("thr_child");
+
+    const spawn = mapCodexNotification("item/completed", {
+      item: {
+        id: "sa_1",
+        type: "subAgentActivity",
+        kind: "started",
+        agentPath: "/root/explore-auth",
+        agentThreadId: "thr_child",
+      },
+    });
+    expect(spawn.agentThreadId).toBeUndefined();
+    expect(spawn.events[0]).toMatchObject({
+      type: "tool.started",
+      callId: "sa_1",
+      agentThreadId: "thr_child",
+    });
+  });
+
+  it("marks completed sub-agent activity as finished", () => {
+    const mapped = mapCodexNotification("item/completed", {
+      item: {
+        id: "sa_1",
+        type: "subAgentActivity",
+        kind: "completed",
+        agentPath: "/root/explore-auth",
+        agentThreadId: "thr_child",
+      },
+    });
+    expect(mapped.events[0]).toMatchObject({
+      type: "tool.updated",
+      callId: "sa_1",
+      kind: "agent",
+      status: "completed",
+    });
+  });
+
   it("maps sub-agent activity as a live agent tool, not silence", () => {
     const started = mapCodexNotification("item/completed", {
       item: {

@@ -1,4 +1,4 @@
-import { ChevronDown, GripVertical, X } from "../chrome/icons";
+import { Bot, ChevronDown, ChevronLeft, GripVertical, X } from "../chrome/icons";
 import {
   memo,
   useCallback,
@@ -47,6 +47,11 @@ import { isAstraModel } from "../lib/astraWelcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { projectKey } from "../lib/paths";
 import { canEditLastTurn, lastTurnRecall } from "../lib/editLastTurn";
+import {
+  harnessSupportsSubagentViews,
+  subagentBlocks,
+  subagentTitle,
+} from "../lib/subagents";
 import {
   loadProjectChatBackground,
   projectChatBackgroundRevision,
@@ -133,6 +138,9 @@ type Props = {
   ) => void;
   onNewTerminal: (sessionId: string) => void;
   onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
+  selectedSubagentCallId?: string | null;
+  onClearSubagentView?: () => void;
+  onSelectSubagent?: (callId: string) => void;
 };
 
 export const SessionPane = memo(function SessionPane({
@@ -173,8 +181,24 @@ export const SessionPane = memo(function SessionPane({
   onHandoff,
   onNewTerminal,
   onPaneDragStart,
+  selectedSubagentCallId = null,
+  onClearSubagentView,
+  onSelectSubagent,
 }: Props) {
   const title = sessionDisplayTitle(session.title, session.harness);
+  const subagentView = selectedSubagentCallId
+    ? subagentBlocks(session, selectedSubagentCallId)
+    : undefined;
+  const viewingSubagent =
+    selectedSubagentCallId != null && subagentView !== undefined;
+  const transcriptBlocks = viewingSubagent ? subagentView : session.blocks;
+  const subagentLabel = viewingSubagent
+    ? subagentTitle(session, selectedSubagentCallId)
+    : null;
+  const openSubagent =
+    harnessSupportsSubagentViews(session.harness) && onSelectSubagent
+      ? (callId: string) => onSelectSubagent(callId)
+      : undefined;
   const recallLastTurnRef = useRef<(() => void) | null>(null);
   const editLastTurnSupported = canEditLastTurn(session);
   const turnRecall = editLastTurnSupported ? lastTurnRecall(session) : null;
@@ -281,8 +305,8 @@ export const SessionPane = memo(function SessionPane({
     return () => window.removeEventListener(ADD_TO_CHAT_EVENT, onAdd);
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionWorkCwd(session);
-  const isEmpty = session.blocks.length === 0;
-  const sessionEmpty = isEmpty && !session.inboxAsk;
+  const isEmpty = transcriptBlocks.length === 0 && !viewingSubagent;
+  const sessionEmpty = isEmpty && !session.inboxAsk && !viewingSubagent;
   const composerElevated = useComposerBackgroundElevated(
     session.cwd,
     sessionEmpty,
@@ -290,7 +314,7 @@ export const SessionPane = memo(function SessionPane({
   const showDeckProjectPicker = isEmpty && !looksLikeProject(session.cwd);
   const dockComposer = !isEmpty || inSplit || !!session.inboxAsk;
   const draftRef = useRef<string | undefined>(undefined);
-  const composer = (
+  const composer = viewingSubagent ? null : (
     <Composer
       enabled={visible}
       focused={focused && composerFocused}
@@ -450,6 +474,24 @@ export const SessionPane = memo(function SessionPane({
           </button>
         </div>
       ) : null}
+      {viewingSubagent ? (
+        <div className="flex h-9 shrink-0 items-center gap-2 border-b border-content/10 px-3">
+          <button
+            type="button"
+            title="Back to session"
+            aria-label="Back to session"
+            onClick={() => onClearSubagentView?.()}
+            className="grid size-7 shrink-0 place-items-center rounded-md text-content/55 hover:bg-content/10 hover:text-content"
+          >
+            <ChevronLeft className="size-4" strokeWidth={1.75} />
+          </button>
+          <Bot className="size-3.5 shrink-0 text-content/45" strokeWidth={1.75} />
+          <span className="min-w-0 truncate text-[13px] font-medium text-content">
+            {subagentLabel}
+          </span>
+          <span className="text-[11px] text-content/45">Subagent</span>
+        </div>
+      ) : null}
       <div ref={transcriptScope} className="@container relative min-h-0 flex-1">
         {isEmpty ? (
           session.inboxAsk ? (
@@ -468,50 +510,56 @@ export const SessionPane = memo(function SessionPane({
         ) : (
           <>
             <AgentTranscript
-              blocks={session.blocks}
-              busy={!!session.busy}
+              blocks={transcriptBlocks}
+              busy={viewingSubagent ? false : !!session.busy}
               visible={visible}
               cwd={workCwd}
               harness={session.harness}
               model={session.model}
-              pendingQuestion={!!session.pendingQuestion}
-              onApproval={approve}
-              onAddToChat={addSelectionToChat}
-              onSaveNote={notesEnabled ? saveNote : undefined}
+              pendingQuestion={viewingSubagent ? false : !!session.pendingQuestion}
+              onApproval={viewingSubagent ? undefined : approve}
+              onAddToChat={viewingSubagent ? undefined : addSelectionToChat}
+              onSaveNote={
+                viewingSubagent || !notesEnabled ? undefined : saveNote
+              }
               onOpenFile={onOpenFile}
               onOpenDiff={onOpenDiff}
-              onOpenPlan={openPlan}
-              onBuildPlan={buildPlan}
+              onOpenPlan={viewingSubagent ? undefined : openPlan}
+              onBuildPlan={viewingSubagent ? undefined : buildPlan}
               onSecondOpinion={
-                !session.inboxAsk && onSecondOpinion
-                  ? (harness, turn, model) =>
+                viewingSubagent || session.inboxAsk || !onSecondOpinion
+                  ? undefined
+                  : (harness, turn, model) =>
                       onSecondOpinion(session.id, harness, turn, model)
-                  : undefined
               }
               onHandoff={
-                !session.inboxAsk && onHandoff
-                  ? (harness, turn, model) =>
+                viewingSubagent || session.inboxAsk || !onHandoff
+                  ? undefined
+                  : (harness, turn, model) =>
                       onHandoff(session.id, harness, turn, model)
-                  : undefined
               }
               onJumpToBottomChange={setShowJumpToBottom}
               onJumpToBottomReady={onJumpToBottomReady}
               onRevealReady={onRevealReady}
               onEditLastTurn={
-                editLastTurnSupported
-                  ? () => {
+                viewingSubagent || !editLastTurnSupported
+                  ? undefined
+                  : () => {
                       onFocus(session.id);
                       recallLastTurnRef.current?.();
                     }
-                  : undefined
               }
+              readOnly={viewingSubagent}
+              onOpenSubagent={viewingSubagent ? undefined : openSubagent}
             />
-            <PromptOutline
-              blocks={session.blocks}
-              scope={transcriptScope}
-              visible={visible}
-              revealBlock={revealBlock}
-            />
+            {viewingSubagent ? null : (
+              <PromptOutline
+                blocks={session.blocks}
+                scope={transcriptScope}
+                visible={visible}
+                revealBlock={revealBlock}
+              />
+            )}
             {showJumpToBottom ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-2 z-30 flex justify-center">
                 <button
@@ -529,7 +577,7 @@ export const SessionPane = memo(function SessionPane({
           </>
         )}
       </div>
-      {dockComposer ? (
+      {dockComposer && composer ? (
         <div className="mx-auto w-full max-w-4xl shrink-0">{composer}</div>
       ) : null}
     </div>

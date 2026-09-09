@@ -120,6 +120,8 @@ type Shared = {
   onMovePane: (fromId: string, toId: string, edge: PaneEdge) => void;
   onNewTerminal: (sessionId: string) => void;
   onTerminalMetaChange?: (fileId: string, patch: TerminalMetaPatch) => void;
+  selectedSubagentBySession?: Record<string, string>;
+  onSelectSubagent?: (sessionId: string, callId: string | null) => void;
 };
 
 type Props = Shared & { layout: LayoutNode };
@@ -181,6 +183,8 @@ function PaneTreeComponent({
   onMovePane,
   onNewTerminal,
   onTerminalMetaChange,
+  selectedSubagentBySession,
+  onSelectSubagent,
 }: Props) {
   const treeRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef(layout);
@@ -390,6 +394,15 @@ function PaneTreeComponent({
                 onHandoff={onHandoff}
                 onNewTerminal={onNewTerminal}
                 onPaneDragStart={onPaneDragStart}
+                selectedSubagentCallId={
+                  selectedSubagentBySession?.[session.id] ?? null
+                }
+                onClearSubagentView={() =>
+                  onSelectSubagent?.(session.id, null)
+                }
+                onSelectSubagent={(callId) =>
+                  onSelectSubagent?.(session.id, callId)
+                }
               />
             ) : null}
           </div>
