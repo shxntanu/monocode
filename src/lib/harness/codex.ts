@@ -556,7 +556,17 @@ function scopeCodexEvent(
   subagentCallId?: string,
 ): HarnessEvent {
   if (!subagentCallId) return event;
-  return { ...event, subagentCallId };
+  switch (event.type) {
+    case "message.delta":
+    case "message.completed":
+    case "reasoning.delta":
+    case "reasoning.completed":
+    case "tool.started":
+    case "tool.updated":
+      return { ...event, subagentCallId };
+    default:
+      return event;
+  }
 }
 
 function publishCodexText(

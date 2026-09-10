@@ -5309,8 +5309,6 @@ export default function App({
   const sessionPaneProps = {
     recents,
     hideProjectPicker: true,
-    selectedSubagentBySession,
-    onSelectSubagent,
     onFocus: onFocusPane,
     onClose: onClosePane,
     onCwdChange,
@@ -5566,6 +5564,8 @@ export default function App({
                       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
                         <PaneTree
                           {...sessionPaneProps}
+                          selectedSubagentBySession={selectedSubagentBySession}
+                          onSelectSubagent={onSelectSubagent}
                           visible={tab.id === activeTabId && !inboxViewOpen}
                           layout={tab.layout}
                           sessions={sessions}
