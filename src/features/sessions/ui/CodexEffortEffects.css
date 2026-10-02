@@ -1,0 +1,1215 @@
+.codex-effort-option {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.codex-effort-option > .codex-effort-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms var(--motion-ease-out);
+}
+
+.codex-effort-option::after {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 1px solid var(--codex-effort-color);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+}
+
+.codex-effort-option > :not(.codex-effort-fx) {
+  position: relative;
+  z-index: 1;
+}
+
+.codex-effort-option[data-effort-tone="low"] {
+  --codex-effort-color: #94a3b8;
+}
+
+.codex-effort-option[data-effort-tone="medium"] {
+  --codex-effort-color: #34d399;
+}
+
+.codex-effort-option[data-effort-tone="high"] {
+  --codex-effort-color: #38bdf8;
+}
+
+.codex-effort-option[data-effort-tone="xhigh"] {
+  --codex-effort-color: #fb7185;
+}
+
+.codex-effort-option[data-effort-tone="ultra"] {
+  --codex-effort-color: #a855f7;
+}
+
+.codex-effort-option[data-effort-tone="max"] {
+  --codex-effort-color: #f4b942;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  > .codex-effort-fx {
+  animation: codex-effort-fx-clear 5000ms linear 1 both;
+}
+
+@keyframes codex-effort-fx-clear {
+  0%,
+  92% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.codex-effort-option > .codex-effort-tiles {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+}
+
+.codex-effort-tile {
+  box-sizing: border-box;
+  background-color: transparent;
+  box-shadow: inset -1px -1px 0
+    color-mix(in srgb, var(--codex-effort-color) 32%, transparent);
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-tile--filled {
+  animation: codex-effort-tile-fill 1400ms ease-out 3 both;
+  animation-delay: calc(var(--tile-distance) * 420ms);
+  will-change: background-color;
+}
+
+.codex-effort-option:is(
+    [data-effort-tone="max"],
+    [data-effort-tone="ultra"]
+  ):is(:hover, :focus-visible, .bg-selection)::after {
+  animation: codex-effort-edge-ripple 5000ms ease-in-out 1 both;
+  will-change: border-width, box-shadow, opacity;
+}
+
+@keyframes codex-effort-tile-fill {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+
+  26% {
+    background-color: var(--codex-effort-color);
+  }
+
+  52% {
+    background-color: color-mix(
+      in srgb,
+      var(--codex-effort-color) 18%,
+      transparent
+    );
+  }
+}
+
+@keyframes codex-effort-edge-ripple {
+  0%,
+  12%,
+  26%,
+  40%,
+  54%,
+  68%,
+  82% {
+    border-width: 1px;
+    opacity: 0.22;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+
+  19%,
+  47%,
+  75% {
+    border-width: 3px;
+    opacity: 0.9;
+    box-shadow:
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--codex-effort-color) 65%, transparent),
+      0 0 8px color-mix(in srgb, var(--codex-effort-color) 60%, transparent);
+  }
+
+  100% {
+    border-width: 1px;
+    opacity: 0;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+
+.codex-effort-fx > svg,
+.codex-effort-scope-grid,
+.codex-effort-scope-live {
+  position: absolute;
+  inset: 0;
+}
+
+.codex-effort-fx svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--codex-effort-color);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.codex-effort-glide > svg,
+.codex-effort-scope > svg,
+.codex-effort-scope-live,
+.codex-effort-synapse > svg,
+.codex-effort-warp > svg {
+  filter: drop-shadow(
+    0 0 1.5px color-mix(in srgb, var(--codex-effort-color) 75%, transparent)
+  );
+}
+
+.codex-effort-glide-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12px;
+  width: 40px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--codex-effort-color) 18%, transparent),
+    transparent
+  );
+  opacity: 0;
+}
+
+.codex-effort-glide-line {
+  stroke-width: 1;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0.7;
+}
+
+.codex-effort-glide-dot {
+  fill: color-mix(in srgb, var(--codex-effort-color) 50%, white);
+  stroke: none;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-glide-sheen {
+  animation: codex-glide-sheen 1200ms cubic-bezier(0.45, 0, 0.25, 1) 150ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-glide-line {
+  animation: codex-glide-line 2800ms linear 150ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-glide-dot {
+  animation: codex-glide-dot 2800ms linear 150ms both;
+}
+
+@keyframes codex-glide-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  15%,
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(var(--glide-distance));
+  }
+}
+
+@keyframes codex-glide-line {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.7;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  43% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  }
+
+  60% {
+    opacity: 0.7;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-glide-dot {
+  0% {
+    opacity: 0;
+    transform: translateX(0) scale(1);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  43% {
+    opacity: 1;
+    transform: translateX(var(--glide-distance)) scale(1);
+  }
+
+  52% {
+    opacity: 0.35;
+    transform: translateX(var(--glide-distance)) scale(2.4);
+  }
+
+  62% {
+    opacity: 0.9;
+    transform: translateX(var(--glide-distance)) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(var(--glide-distance)) scale(1);
+  }
+}
+
+.codex-effort-scope-grid {
+  --scope-grid-line: color-mix(
+    in srgb,
+    var(--codex-effort-color) 13%,
+    transparent
+  );
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent 15.5px,
+      color-mix(in srgb, var(--codex-effort-color) 30%, transparent) 15.5px
+        16.5px,
+      transparent 16.5px
+    ),
+    linear-gradient(to right, var(--scope-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--scope-grid-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    calc(100% / 12) 100%,
+    100% 8px;
+  opacity: 0;
+}
+
+.codex-effort-scope-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -28px;
+  width: 28px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--codex-effort-color) 16%, transparent) 75%,
+    color-mix(in srgb, var(--codex-effort-color) 50%, transparent)
+  );
+  opacity: 0;
+}
+
+.codex-effort-scope-noise,
+.codex-effort-scope-signal,
+.codex-effort-scope-echo {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+}
+
+.codex-effort-scope-noise {
+  stroke-width: 1;
+  opacity: 0;
+}
+
+.codex-effort-scope-signal,
+.codex-effort-scope-signal-live {
+  stroke-width: 1.4;
+}
+
+.codex-effort-scope-echo,
+.codex-effort-scope-echo-live {
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.codex-effort-scope-head {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 40%, white);
+  stroke-width: 2;
+  stroke-dasharray: 0.05 2;
+  stroke-dashoffset: 0.05;
+  opacity: 0;
+}
+
+.codex-effort-scope-live {
+  opacity: 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 14%,
+    #000 86%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 14%,
+    #000 86%,
+    transparent
+  );
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-grid {
+  animation: codex-scope-grid 5000ms ease-out both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-beam {
+  animation: codex-scope-beam 1700ms linear 150ms both;
+  will-change: transform, opacity;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-noise {
+  animation: codex-scope-noise 1700ms linear 150ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-head--noise {
+  animation: codex-scope-noise-head 1700ms linear 150ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-signal {
+  animation: codex-scope-signal 1500ms linear 1500ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-head--signal {
+  animation: codex-scope-signal-head 1500ms linear 1500ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-echo {
+  animation: codex-scope-echo 1500ms linear 1650ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-live {
+  animation: codex-scope-live 5000ms linear both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-signal-live {
+  animation:
+    codex-scope-stream 680ms linear 2700ms infinite,
+    codex-scope-breathe 1100ms ease-in-out 2900ms infinite;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-scope-echo-live {
+  animation: codex-scope-stream-back 900ms linear 2700ms infinite;
+}
+
+.codex-effort-option[data-effort-tone="medium"]:is(
+    :hover,
+    :focus-visible,
+    .bg-selection
+  )::after {
+  animation: codex-scope-lock 5000ms ease-out 1 both;
+  will-change: box-shadow, opacity;
+}
+
+@keyframes codex-scope-grid {
+  0% {
+    opacity: 0;
+  }
+
+  8%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes codex-scope-beam {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  6% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateX(202px);
+  }
+
+  82%,
+  100% {
+    opacity: 0;
+    transform: translateX(230px);
+  }
+}
+
+@keyframes codex-scope-noise {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.55;
+  }
+
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 0.55;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-scope-noise-head {
+  0% {
+    stroke-dashoffset: 0.05;
+    opacity: 1;
+  }
+
+  70% {
+    stroke-dashoffset: -0.95;
+    opacity: 1;
+  }
+
+  76%,
+  100% {
+    stroke-dashoffset: -0.95;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-scope-signal {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+  }
+
+  80% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-scope-signal-head {
+  0% {
+    stroke-dashoffset: 0.05;
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+  }
+
+  80% {
+    stroke-dashoffset: -0.95;
+    opacity: 1;
+  }
+
+  90%,
+  100% {
+    stroke-dashoffset: -0.95;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-scope-echo {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.45;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+  }
+
+  80% {
+    stroke-dashoffset: 0;
+    opacity: 0.45;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-scope-live {
+  0%,
+  54% {
+    opacity: 0;
+  }
+
+  60%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes codex-scope-stream {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(34px);
+  }
+}
+
+@keyframes codex-scope-stream-back {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-34px);
+  }
+}
+
+@keyframes codex-scope-breathe {
+  0%,
+  100% {
+    stroke-width: 1.4;
+  }
+
+  50% {
+    stroke-width: 2.2;
+  }
+}
+
+@keyframes codex-scope-lock {
+  0%,
+  53% {
+    opacity: 0;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+
+  56% {
+    opacity: 1;
+    box-shadow:
+      inset 0 0 12px
+        color-mix(in srgb, var(--codex-effort-color) 45%, transparent),
+      0 0 8px color-mix(in srgb, var(--codex-effort-color) 55%, transparent);
+  }
+
+  72%,
+  100% {
+    opacity: 0.4;
+    box-shadow: inset 0 0 6px
+      color-mix(in srgb, var(--codex-effort-color) 18%, transparent);
+  }
+}
+
+.codex-effort-synapse-edges {
+  color: var(--codex-effort-color);
+  stroke-width: 0.8;
+}
+
+.codex-effort-synapse-edge {
+  stroke: currentColor;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0.5;
+}
+
+.codex-effort-synapse-pulse {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 55%, white);
+  stroke-width: 1.6;
+  stroke-dasharray: 0.3 2;
+  opacity: 0;
+}
+
+.codex-effort-synapse-pulse--backward,
+.codex-effort-synapse-ring--backward {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 20%, white);
+}
+
+.codex-effort-synapse-nodes circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.codex-effort-synapse-core {
+  fill: var(--codex-effort-color);
+  stroke: none;
+  opacity: 0;
+}
+
+.codex-effort-synapse-ring {
+  stroke-width: 0.9;
+  opacity: 0;
+}
+
+.codex-effort-synapse-flare {
+  fill: color-mix(in srgb, var(--codex-effort-color) 60%, white);
+  stroke: none;
+  opacity: 0;
+}
+
+.codex-effort-synapse-orbit {
+  stroke-dasharray: var(--dash) calc(0.5 - var(--dash));
+  stroke-dashoffset: var(--dash);
+  opacity: 0;
+}
+
+.codex-effort-synapse-orbit--tail {
+  stroke-width: 0.8;
+  stroke-opacity: 0.35;
+}
+
+.codex-effort-synapse-orbit--body {
+  stroke-width: 1.3;
+}
+
+.codex-effort-synapse-orbit--head {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 25%, white);
+  stroke-width: 2;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-edges {
+  animation: codex-synapse-surge 5000ms ease-in-out both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-edge {
+  animation: codex-synapse-draw calc(var(--span) * 170ms)
+    cubic-bezier(0.3, 0, 0.2, 1) calc(200ms + var(--layer) * 130ms) both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-pulse--forward {
+  animation: codex-synapse-pulse-forward calc(var(--span) * 120ms) linear
+    calc(1700ms + var(--layer) * 90ms) forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-pulse--backward {
+  animation: codex-synapse-pulse-backward calc(var(--span) * 120ms) linear
+    calc(2750ms + var(--reverse) * 90ms) forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-core {
+  animation: codex-synapse-core 520ms ease-out
+    calc(200ms + (var(--layer) + 0.4) * 130ms) both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-ring--forward {
+  animation: codex-synapse-ring 620ms ease-out
+    calc(1730ms + var(--layer) * 90ms) forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-ring--backward {
+  animation: codex-synapse-ring 620ms ease-out
+    calc(2780ms + var(--reverse) * 90ms) forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-flare {
+  animation: codex-synapse-flare 700ms ease-out
+    calc(3550ms + var(--spread) * 320ms) forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-synapse-orbit {
+  animation: codex-synapse-orbit 1250ms cubic-bezier(0.55, 0, 0.25, 1) 3300ms
+    forwards;
+}
+
+.codex-effort-option[data-effort-tone="high"]:is(
+    :hover,
+    :focus-visible,
+    .bg-selection
+  )::after {
+  animation: codex-synapse-charge 5000ms ease-in-out 1 both;
+  will-change: box-shadow, opacity;
+}
+
+@keyframes codex-synapse-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes codex-synapse-surge {
+  0%,
+  68%,
+  90%,
+  100% {
+    color: var(--codex-effort-color);
+    stroke-width: 0.8;
+  }
+
+  76% {
+    color: color-mix(in srgb, var(--codex-effort-color) 45%, white);
+    stroke-width: 1.5;
+  }
+}
+
+@keyframes codex-synapse-pulse-forward {
+  0% {
+    stroke-dashoffset: 0.3;
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-synapse-pulse-backward {
+  0% {
+    stroke-dashoffset: -1;
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: 0.3;
+    opacity: 0;
+  }
+}
+
+@keyframes codex-synapse-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(1.7);
+    fill: color-mix(in srgb, var(--codex-effort-color) 35%, white);
+  }
+
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+    fill: var(--codex-effort-color);
+  }
+}
+
+@keyframes codex-synapse-ring {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.5);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes codex-synapse-flare {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  30% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes codex-synapse-orbit {
+  0% {
+    stroke-dashoffset: var(--dash);
+    opacity: 0;
+  }
+
+  12%,
+  82% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: calc(var(--dash) - 1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes codex-synapse-charge {
+  0%,
+  66% {
+    opacity: 0;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+
+  80% {
+    opacity: 0.85;
+    box-shadow:
+      inset 0 0 10px
+        color-mix(in srgb, var(--codex-effort-color) 40%, transparent),
+      0 0 6px color-mix(in srgb, var(--codex-effort-color) 50%, transparent);
+  }
+
+  100% {
+    opacity: 0.2;
+    box-shadow: inset 0 0 4px
+      color-mix(in srgb, var(--codex-effort-color) 15%, transparent);
+  }
+}
+
+.codex-effort-warp-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 28px;
+  margin: -14px 0 0 -36px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--codex-effort-color) 70%, white),
+    color-mix(in srgb, var(--codex-effort-color) 35%, transparent) 45%,
+    transparent
+  );
+  opacity: 0;
+}
+
+.codex-effort-warp-flash {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--codex-effort-color) 35%, transparent);
+  opacity: 0;
+}
+
+.codex-effort-warp-ring,
+.codex-effort-warp-shock {
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+}
+
+.codex-effort-warp-shock {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 30%, white);
+  stroke-width: 2;
+}
+
+.codex-effort-warp-streak {
+  stroke-width: 1;
+  stroke-dasharray: 0.22 2;
+  stroke-dashoffset: 0.22;
+  opacity: 0;
+}
+
+.codex-effort-warp-streak--1 {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 60%, white);
+}
+
+.codex-effort-warp-streak--2 {
+  stroke: color-mix(in srgb, var(--codex-effort-color) 30%, white);
+  stroke-width: 1.3;
+}
+
+.codex-effort-warp-star {
+  fill: color-mix(in srgb, var(--codex-effort-color) 40%, white);
+  stroke: none;
+  opacity: 0;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-core {
+  animation: codex-warp-core 5000ms ease-in both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-ring {
+  animation: codex-warp-ring calc(1500ms - var(--ring) * 180ms)
+    cubic-bezier(0.5, 0, 0.9, 0.5) calc(150ms + var(--ring) * 480ms) both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-streak {
+  animation: codex-warp-streak var(--duration) cubic-bezier(0.55, 0, 1, 0.45)
+    var(--delay) var(--count) both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-flash {
+  animation: codex-warp-flash 600ms ease-out 3200ms both;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-shock {
+  animation: codex-warp-shock 600ms cubic-bezier(0.2, 0.7, 0.3, 1) 3200ms
+    forwards;
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-warp-star {
+  animation: codex-warp-star 1300ms ease-out var(--delay) both;
+}
+
+.codex-effort-option[data-effort-tone="xhigh"]:is(
+    :hover,
+    :focus-visible,
+    .bg-selection
+  )::after {
+  animation: codex-warp-charge 5000ms ease-in-out 1 both;
+  will-change: border-width, box-shadow, opacity;
+}
+
+@keyframes codex-warp-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  30% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  62% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(2.6);
+  }
+
+  78% {
+    opacity: 0.25;
+    transform: scale(1.4);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes codex-warp-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.06);
+  }
+
+  25% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes codex-warp-streak {
+  0% {
+    stroke-dashoffset: 0.22;
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 1;
+  }
+}
+
+@keyframes codex-warp-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+}
+
+@keyframes codex-warp-shock {
+  0% {
+    opacity: 1;
+    transform: scale(0.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes codex-warp-star {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+
+  20% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+
+@keyframes codex-warp-charge {
+  0% {
+    border-width: 1px;
+    opacity: 0;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+
+  40% {
+    opacity: 0.25;
+    box-shadow: inset 0 0 4px
+      color-mix(in srgb, var(--codex-effort-color) 20%, transparent);
+  }
+
+  62% {
+    border-width: 1px;
+    opacity: 0.55;
+    box-shadow: inset 0 0 8px
+      color-mix(in srgb, var(--codex-effort-color) 35%, transparent);
+  }
+
+  65% {
+    border-width: 2px;
+    opacity: 1;
+    box-shadow:
+      inset 0 0 14px
+        color-mix(in srgb, var(--codex-effort-color) 55%, transparent),
+      0 0 8px color-mix(in srgb, var(--codex-effort-color) 60%, transparent);
+  }
+
+  80% {
+    border-width: 1px;
+    opacity: 0.4;
+    box-shadow: inset 0 0 6px
+      color-mix(in srgb, var(--codex-effort-color) 20%, transparent);
+  }
+
+  100% {
+    border-width: 1px;
+    opacity: 0;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codex-effort-option > .codex-effort-fx {
+    transition: none;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    > .codex-effort-fx {
+    animation: none;
+    opacity: 0.72;
+    visibility: visible;
+  }
+
+  .codex-effort-option[data-effort-tone]:is(
+      :hover,
+      :focus-visible,
+      .bg-selection
+    )::after {
+    animation: none;
+    border-width: 1px;
+    opacity: 0.42;
+    box-shadow: none;
+    will-change: auto;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    > .codex-effort-fx
+    * {
+    animation: none;
+    will-change: auto;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    .codex-effort-tile--filled {
+    background-color: var(--codex-effort-color);
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    :is(.codex-effort-scope-grid, .codex-effort-scope-live) {
+    opacity: 1;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    :is(.codex-effort-synapse-edge, .codex-effort-synapse-core) {
+    stroke-dashoffset: 0;
+    opacity: 0.8;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    .codex-effort-glide-line {
+    stroke-dashoffset: 0;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    .codex-effort-warp-core {
+    opacity: 0.5;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    .codex-effort-warp-streak {
+    stroke-dashoffset: -0.45;
+    opacity: 0.6;
+  }
+}

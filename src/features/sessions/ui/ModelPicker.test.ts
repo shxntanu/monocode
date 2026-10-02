@@ -648,7 +648,7 @@ describe("model picker", () => {
     expect(serviceTierPill.querySelectorAll("svg")).toHaveLength(2);
   });
 
-  it("shimmers only Codex max and ultra effort options", () => {
+  it("animates every Codex effort option", () => {
     setHarnessModels("codex", [
       {
         id: "codex:gpt-5.6",
@@ -663,7 +663,9 @@ describe("model picker", () => {
             value: "high",
             options: [
               { value: "low", label: "Low" },
+              { value: "medium", label: "Medium" },
               { value: "high", label: "High" },
+              { value: "xhigh", label: "Extra High" },
               { value: "max", label: "Max" },
               { value: "ultra", label: "Ultra" },
             ],
@@ -711,12 +713,37 @@ describe("model picker", () => {
     );
     expect(filledTiles.length).toBeGreaterThanOrEqual(96);
     expect(filledTiles.length).toBeLessThanOrEqual(112);
-    const high = [
+    expect(
+      container.querySelectorAll(
+        '[data-effort-tone="medium"] .codex-effort-scope path',
+      ),
+    ).toHaveLength(7);
+    expect(
+      container.querySelectorAll(
+        '[data-effort-tone="high"] .codex-effort-synapse-core',
+      ),
+    ).toHaveLength(13);
+    expect(
+      container.querySelectorAll(
+        '[data-effort-tone="high"] .codex-effort-synapse-edge',
+      ),
+    ).toHaveLength(22);
+    expect(
+      container.querySelectorAll(
+        '[data-effort-tone="low"] .codex-effort-glide-line',
+      ),
+    ).toHaveLength(1);
+    expect(
+      container.querySelectorAll(
+        '[data-effort-tone="xhigh"] .codex-effort-warp-streak',
+      ),
+    ).toHaveLength(36);
+    const tones = [
       ...container.querySelectorAll<HTMLButtonElement>(
         '[role="menuitemradio"]',
       ),
-    ].find((button) => button.textContent === "High")!;
-    expect(high.classList.contains("codex-effort-option")).toBe(false);
+    ].map((option) => option.dataset.effortTone);
+    expect(tones).toEqual(["low", "medium", "high", "xhigh", "max", "ultra"]);
   });
 
   it("groups the service tier inside the effort popover", () => {
